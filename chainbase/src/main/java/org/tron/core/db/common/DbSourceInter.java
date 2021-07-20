@@ -30,6 +30,8 @@ public interface DbSourceInter<V> extends BatchSourceInter<byte[], V>,
 
   void initDB();
 
+  void asyncInitDB();
+
   boolean isAlive();
 
   void closeDB();

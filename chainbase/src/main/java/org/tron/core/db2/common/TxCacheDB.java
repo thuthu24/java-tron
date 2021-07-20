@@ -12,11 +12,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 import org.iq80.leveldb.WriteOptions;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.storage.leveldb.LevelDbDataSourceImpl;
 import org.tron.common.storage.rocksdb.RocksDbDataSourceImpl;
+import org.tron.common.utils.Commons;
 import org.tron.common.utils.StorageUtils;
 import org.tron.core.db.common.iterator.DBIterator;
 
@@ -70,18 +73,26 @@ public class TxCacheDB implements DB<byte[], byte[]>, Flusher {
    */
   private void init() {
     DBIterator iterator = (DBIterator) persistentStore.iterator();
-    while (iterator.hasNext()) {
-      Entry<byte[], byte[]> entry = iterator.next();
-      byte[] key = entry.getKey();
-      byte[] value = entry.getValue();
-      if (key == null || value == null) {
-        return;
+    ExecutorService es = Executors.newSingleThreadExecutor();
+    es.execute(() -> {
+      long s = System.currentTimeMillis();
+      while (iterator.hasNext()) {
+        Entry<byte[], byte[]> entry = iterator.next();
+        byte[] key = entry.getKey();
+        byte[] value = entry.getValue();
+        if (key == null || value == null) {
+          return;
+        }
+        Key k = Key.copyOf(key);
+        Long v = Longs.fromByteArray(value);
+        blockNumMap.put(v, k);
+        db.put(k, v);
       }
-      Key k = Key.copyOf(key);
-      Long v = Longs.fromByteArray(value);
-      blockNumMap.put(v, k);
-      db.put(k, v);
-    }
+      logger.info("******tran-cache init to memDb success cost {} ms", System.currentTimeMillis() - s);
+      Commons.countInitDown.countDown();
+    });
+    es.shutdown();
+
   }
 
   @Override

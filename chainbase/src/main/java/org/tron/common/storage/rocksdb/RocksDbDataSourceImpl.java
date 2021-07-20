@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import lombok.NoArgsConstructor;
@@ -31,6 +33,7 @@ import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 import org.tron.common.setting.RocksDbSettings;
 import org.tron.common.storage.WriteOptionsWrapper;
+import org.tron.common.utils.Commons;
 import org.tron.common.utils.FileUtil;
 import org.tron.common.utils.PropUtil;
 import org.tron.core.db.common.DbSourceInter;
@@ -47,7 +50,7 @@ public class RocksDbDataSourceImpl implements DbSourceInter<byte[]>,
   private static final String FAIL_TO_INIT_DATABASE = "Failed to initialize database";
   private String dataBaseName;
   private RocksDB database;
-  private boolean alive;
+  private volatile boolean alive;
   private String parentPath;
   private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
   private static final String KEY_ENGINE = "ENGINE";
@@ -60,7 +63,7 @@ public class RocksDbDataSourceImpl implements DbSourceInter<byte[]>,
     this.parentPath = parentPath;
     this.comparator = comparator;
     RocksDbSettings.setRocksDbSettings(settings);
-    initDB();
+    asyncInitDB();
   }
 
   public RocksDbDataSourceImpl(String parentPath, String name, RocksDbSettings settings) {
@@ -70,6 +73,9 @@ public class RocksDbDataSourceImpl implements DbSourceInter<byte[]>,
     initDB();
   }
 
+  /**
+   * for test.
+   */
   public RocksDbDataSourceImpl(String parentPath, String name) {
     this.parentPath = parentPath;
     this.dataBaseName = name;
@@ -182,6 +188,20 @@ public class RocksDbDataSourceImpl implements DbSourceInter<byte[]>,
     initDB(RocksDbSettings.getSettings());
   }
 
+  @Override
+  public void asyncInitDB() {
+    if (Commons.asyncInitSets.contains(this.getDBName())) {
+      ExecutorService es = Executors.newSingleThreadExecutor();
+      es.execute(() -> {
+        initDB();
+        Commons.countInitDown.countDown();
+      });
+      es.shutdown();
+    } else {
+      initDB();
+    }
+  }
+
   public void initDB(RocksDbSettings settings) {
     resetDbLock.writeLock().lock();
     try {
@@ -241,7 +261,10 @@ public class RocksDbDataSourceImpl implements DbSourceInter<byte[]>,
           }
 
           try {
+            long s = System.currentTimeMillis();
             database = RocksDB.open(options, dbPath.toString());
+            long e = System.currentTimeMillis();
+            logger.info("Success initRocksDB {} cost {} ms.", dataBaseName, e - s);
           } catch (RocksDBException e) {
             logger.error(e.getMessage(), e);
             throw new RuntimeException(FAIL_TO_INIT_DATABASE, e);

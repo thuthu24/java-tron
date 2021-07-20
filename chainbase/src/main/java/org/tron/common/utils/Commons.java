@@ -1,5 +1,8 @@
 package org.tron.common.utils;
 
+import com.google.common.collect.Sets;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.tron.common.parameter.CommonParameter;
@@ -17,6 +20,12 @@ import org.tron.core.store.ExchangeV2Store;
 public class Commons {
 
   public static final int ASSET_ISSUE_COUNT_LIMIT_MAX = 1000;
+
+
+  public static final Set<String> asyncInitSets = Sets.newHashSet("account", "block",
+      "trans", "storage-row", "transactionRetStore", "transactionHistoryStore");
+
+  public static final CountDownLatch countInitDown = new CountDownLatch(asyncInitSets.size() + 1);
 
   public static byte[] decode58Check(String input) {
     byte[] decodeCheck = Base58.decode(input);

@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
@@ -47,6 +49,7 @@ import org.iq80.leveldb.WriteOptions;
 import org.iq80.leveldb.ReadOptions;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.storage.WriteOptionsWrapper;
+import org.tron.common.utils.Commons;
 import org.tron.common.utils.FileUtil;
 import org.tron.common.utils.StorageUtils;
 import org.tron.core.db.common.DbSourceInter;
@@ -60,7 +63,7 @@ public class LevelDbDataSourceImpl implements DbSourceInter<byte[]>,
 
   private String dataBaseName;
   private DB database;
-  private boolean alive;
+  private volatile boolean alive;
   private String parentPath;
   private Options options;
   private WriteOptions writeOptions;
@@ -78,9 +81,12 @@ public class LevelDbDataSourceImpl implements DbSourceInter<byte[]>,
     this.dataBaseName = dataBaseName;
     this.options = options;
     this.writeOptions = writeOptions;
-    initDB();
+    asyncInitDB();
   }
 
+  /**
+   * for test.
+   */
   public LevelDbDataSourceImpl(String parentPath, String dataBaseName) {
     this.parentPath = Paths.get(
         parentPath,
@@ -117,6 +123,20 @@ public class LevelDbDataSourceImpl implements DbSourceInter<byte[]>,
     }
   }
 
+  @Override
+  public void asyncInitDB() {
+    if (Commons.asyncInitSets.contains(this.getDBName())) {
+      ExecutorService es = Executors.newSingleThreadExecutor();
+      es.execute(() -> {
+        initDB();
+        Commons.countInitDown.countDown();
+      });
+      es.shutdown();
+    } else {
+      initDB();
+    }
+  }
+
   private void openDatabase(Options dbOptions) throws IOException {
     final Path dbPath = getDbPath();
     if (dbPath == null || dbPath.getParent() == null) {
@@ -126,7 +146,10 @@ public class LevelDbDataSourceImpl implements DbSourceInter<byte[]>,
       Files.createDirectories(dbPath.getParent());
     }
     try {
+      long s = System.currentTimeMillis();
       database = factory.open(dbPath.toFile(), dbOptions);
+      long e = System.currentTimeMillis();
+      logger.info("Success initLevelDB {} cost {} ms.", dataBaseName, e - s);
     } catch (IOException e) {
       if (e.getMessage().contains("Corruption:")) {
         factory.repair(dbPath.toFile(), dbOptions);
