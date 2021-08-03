@@ -295,4 +295,6 @@ public class Constant {
   public static final String  ALLOW_ACCOUNT_ASSET_OPTIMIZATION = "committee.allowAccountAssetOptimization";
 
   public static final String LOCAL_HOST = "127.0.0.1";
+
+  public static final String CRON_SHUTDOWN_EXP = "cron.shutdownExp";
 }
