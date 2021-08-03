@@ -19,6 +19,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -34,6 +35,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.common.args.Account;
@@ -84,6 +86,9 @@ public class Args extends CommonParameter {
   @Getter
   private static ConcurrentHashMap<Long, BlockingQueue<ContractEventTrigger>>
       solidityContractEventTriggerMap = new ConcurrentHashMap<>();
+
+  @Getter
+  private static CronExpression cronExpression = null;
 
   public static void clearParam() {
     PARAMETER.outputDirectory = "output-directory";
@@ -198,6 +203,7 @@ public class Args extends CommonParameter {
     PARAMETER.openTransactionSort = false;
     PARAMETER.allowAccountAssetOptimization = 0;
     PARAMETER.disabledApiList = Collections.emptyList();
+    cronExpression = null;
   }
 
   /**
@@ -820,6 +826,14 @@ public class Args extends CommonParameter {
             ? config.getStringList(Constant.NODE_DISABLED_API_LIST)
             .stream().map(String::toLowerCase).collect(Collectors.toList())
             : Collections.emptyList();
+
+    if (config.hasPath(Constant.CRON_SHUTDOWN_EXP)) {
+      try {
+        cronExpression = new CronExpression(config.getString(Constant.CRON_SHUTDOWN_EXP));
+      } catch (ParseException e) {
+        logger.error(e.getMessage(),e);
+      }
+    }
 
     logConfig();
   }
