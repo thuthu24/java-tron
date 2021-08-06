@@ -258,6 +258,7 @@ createScript(project, 'org.tron.program.FullNode', 'FullNode')
 createScript(project, 'org.tron.program.KeystoreFactory', 'KeystoreFactory')
 createScript(project, 'org.tron.program.DBConvert', 'DBConvert')
 createScript(project, 'org.tron.tool.litefullnode.LiteFullNodeTool', 'LiteFullNodeTool')
+createScript(project, 'org.tron.program.InitAccountTraceStore', 'InitAccountTraceStore')
 
 def releaseBinary = hasProperty('binaryRelease') ? getProperty('binaryRelease') : 'true'
 if (releaseBinary == 'true') {
@@ -266,6 +267,7 @@ if (releaseBinary == 'true') {
                 binaryRelease('buildFullNodeJar', 'FullNode', 'org.tron.program.FullNode'),
                 binaryRelease('buildKeystoreFactoryJar', 'KeystoreFactory', 'org.tron.program.KeystoreFactory'),
                 binaryRelease('buildDBConvertJar', 'DBConvert', 'org.tron.program.DBConvert'),
+                binaryRelease('buildInitAccountTraceStoreJar', 'InitAccountTraceStore', 'org.tron.program.InitAccountTraceStore'),
                 binaryRelease('buildLiteFullNodeToolJar', 'LiteFullNodeTool', 'org.tron.tool.litefullnode.LiteFullNodeTool'))
     }
 }
