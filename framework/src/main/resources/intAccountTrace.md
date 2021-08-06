@@ -1,9 +1,9 @@
 #Name
-     Init Account Trace Store Tool
+         Init Account Trace Store Tool
 
 
 #SYNOPSIS
-    java -jar InitAccountTraceStore.jar [options]
+         java -jar InitAccountTraceStore.jar [options]
 
 
 #DESCRIPTION
@@ -11,7 +11,7 @@ This tools can init `account-trace` store with `account` store based on latest b
 
 
 #PARAMETERS
-    options        Command-line options.
+         options        Command-line options.
 
 #OPTIONS
 
