@@ -52,6 +52,7 @@ public class InitAccountTraceStore {
       System.out.println("latestBlockNum :" + latestBlockNum);
       return -1;
     }
+    System.out.println("latestBlockNum :" + latestBlockNum);
     DB account = newLevelDb(Paths.get(dbPath, "account"));
     DB accountTrace = newLevelDb(Paths.get(dbPath, "account-trace"));
     initAccountTraceStore(account, accountTrace,latestBlockNum);
@@ -67,9 +68,7 @@ public class InitAccountTraceStore {
       iterable.seekToLast();
       if (iterable.hasNext()) {
         Map.Entry<byte[],byte[]> blockV = iterable.peekNext();
-        long num = Longs.fromByteArray(blockV.getKey());
-        System.out.println("blockCapsuleNum: " + num);
-        return num;
+        return Longs.fromByteArray(blockV.getKey());
       }
     } catch (Exception e) {
       e.printStackTrace();
@@ -91,7 +90,7 @@ public class InitAccountTraceStore {
       while (accountIterator.hasNext()) {
         count++;
         if (count % 10000 == 0) {
-          System.out.println("count: " + count);
+          System.out.println("account scan : " + count);
         }
         Map.Entry<byte[], byte[]> entry = accountIterator.next();
         byte[] address = entry.getKey();
@@ -118,7 +117,7 @@ public class InitAccountTraceStore {
           logger.error("{}", e);
         }
       }
-      System.out.println("count All : " + count);
+      System.out.println("account All : " + count);
     }  catch (Exception e) {
       logger.error("{}", e);
     } finally {
