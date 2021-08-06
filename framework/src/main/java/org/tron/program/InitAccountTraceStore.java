@@ -53,15 +53,15 @@ public class InitAccountTraceStore {
       return -1;
     }
     System.out.println("latestBlockNum :" + latestBlockNum);
-    DB account = newLevelDb(Paths.get(dbPath, "account"));
-    DB accountTrace = newLevelDb(Paths.get(dbPath, "account-trace"));
+    DB account = newLevelDb(Paths.get(dbPath, "database", "account"));
+    DB accountTrace = newLevelDb(Paths.get(dbPath, "database", "account-trace"));
     initAccountTraceStore(account, accountTrace,latestBlockNum);
     return 0;
   }
 
   public static long latestBlockNum(String db) {
 
-    Path path  = Paths.get(db, "block");
+    Path path  = Paths.get(db, "database", "block");
     ReadOptions readOptions = new ReadOptions().fillCache(false);
     try (DB block = newLevelDb(path);
          DBIterator iterable = block.iterator(readOptions)) {
@@ -172,7 +172,7 @@ public class InitAccountTraceStore {
     private List<String> parameters = new ArrayList<>();
 
     @Parameter(names = {"-d", "--database-directory"}, description = "java-tron database directory")
-    private  String databaseDirectory = "output-directory/database";
+    private  String databaseDirectory = "output-directory";
 
     @Parameter(names = {"-h", "--help"}, help = true)
     private  boolean help;

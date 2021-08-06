@@ -19,7 +19,7 @@ This tools can init `account-trace` store with `account` store based on latest b
 
 #OPTIONS
 
-        -d                    Java-tron database,default "output-directory/database".
+        -d                    Java-tron database,default "output-directory".
         --database-directory  Equivalent to -d.
         -h                    Display a usage message on standard output and exit successfully.
         --help                Equivalent to -h.
