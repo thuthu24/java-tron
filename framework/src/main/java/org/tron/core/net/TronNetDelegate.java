@@ -240,6 +240,17 @@ public class TronNetDelegate {
         throw new P2pException(TypeEnum.BAD_BLOCK, e);
       }
     }
+    if (dbManager.getLatestSolidityNumShutDown() > 0
+        && dbManager.getLatestSolidityNumShutDown() == dbManager.getDynamicPropertiesStore()
+        .getLatestBlockHeaderNumberFromDB()) {
+
+      logger.info("begin shutdown, currentBlockNum:{}, DbBlockNum:{} ,solidifiedBlockNum:{}.",
+          dbManager.getDynamicPropertiesStore().getLatestBlockHeaderNumber(),
+          dbManager.getDynamicPropertiesStore().getLatestBlockHeaderNumberFromDB(),
+          dbManager.getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
+      // https://stackoverflow.com/questions/2614774/
+      System.exit(0);
+    }
   }
 
   public void pushTransaction(TransactionCapsule trx) throws P2pException {
