@@ -70,6 +70,7 @@ public class TronNetService {
   }
 
   public void stop() {
+    logger.info("TronNetService closed start.");
     channelManager.close();
     advService.close();
     syncService.close();

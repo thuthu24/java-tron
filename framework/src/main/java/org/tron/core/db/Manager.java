@@ -221,6 +221,7 @@ public class Manager {
   private BlockingQueue<TransactionCapsule> rePushTransactions;
   private BlockingQueue<TriggerCapsule> triggerCapsuleQueue;
 
+  @Getter
   private volatile long latestSolidityNumShutDown = -1;
 
   /**
@@ -416,7 +417,11 @@ public class Manager {
     //for test only
     chainBaseManager.getDynamicPropertiesStore().updateDynamicStoreByConfig();
 
-    // initCacheTxs();
+    //initCacheTxs();
+    long headNum = chainBaseManager.getDynamicPropertiesStore().getLatestBlockHeaderNumber();
+    logger.info("Current headNum is: {}.", headNum);
+    long SolidifiedNum = chainBaseManager.getDynamicPropertiesStore().getLatestSolidifiedBlockNum();
+    logger.info("Current solidifiedNum is: {}.", SolidifiedNum);
     revokingStore.enable();
     validateSignService = Executors
         .newFixedThreadPool(Args.getInstance().getValidateSignThreadNum());
@@ -1110,15 +1115,6 @@ public class Manager {
                   + ", khaosDb unlinkMiniStore size: "
                   + khaosDb.getMiniUnlinkedStore().size());
 
-          if (latestSolidityNumShutDown > 0
-              && latestSolidityNumShutDown == getDynamicPropertiesStore().getLatestSolidifiedBlockNum()) {
-
-            logger.info("begin shutdown, currentBlockNum:{}, solidifiedBlockNum:{}",
-                block.getNum(),
-                getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
-            System.exit(0);
-          }
-
           return;
         }
         try (ISession tmpSession = revokingStore.buildSession()) {
@@ -1157,14 +1153,6 @@ public class Manager {
         block.getNum(),
         System.currentTimeMillis() - start,
         block.getTransactions().size());
-    if (latestSolidityNumShutDown > 0
-        && latestSolidityNumShutDown == getDynamicPropertiesStore().getLatestSolidifiedBlockNum()) {
-
-      logger.info("begin shutdown, currentBlockNum:{}, solidifiedBlockNum:{}",
-          block.getNum(),
-          getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
-      System.exit(0);
-    }
   }
 
   public void updateDynamicProperties(BlockCapsule block) {
