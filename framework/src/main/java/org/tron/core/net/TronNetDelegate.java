@@ -6,6 +6,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import javax.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.encoders.Hex;
@@ -86,6 +89,28 @@ public class TronNetDelegate {
   private int blockIdCacheSize = 100;
 
   private long timeout = 1000;
+
+  private volatile boolean  hitDown = false;
+
+  @PostConstruct
+  public void init() {
+    ExecutorService discoverer = Executors.newSingleThreadExecutor();
+    discoverer.execute(() -> {
+      while (true) {
+        try {
+          Thread.sleep(1);
+          if (hitDown) {
+            System.exit(0);
+          }
+        } catch (InterruptedException e) {
+          logger.error("{}", e);
+        }
+      }
+    });
+    discoverer.shutdown();
+  }
+
+
 
   private Queue<BlockId> freshBlockId = new ConcurrentLinkedQueue<BlockId>() {
     @Override
@@ -195,6 +220,20 @@ public class TronNetDelegate {
   }
 
   public void processBlock(BlockCapsule block, boolean isSync) throws P2pException {
+    if (!hitDown && dbManager.getLatestSolidityNumShutDown() > 0
+        && dbManager.getLatestSolidityNumShutDown() == dbManager.getDynamicPropertiesStore()
+        .getLatestBlockHeaderNumberFromDB()) {
+
+      logger.info("begin shutdown, currentBlockNum:{}, DbBlockNum:{} ,solidifiedBlockNum:{}.",
+          dbManager.getDynamicPropertiesStore().getLatestBlockHeaderNumber(),
+          dbManager.getDynamicPropertiesStore().getLatestBlockHeaderNumberFromDB(),
+          dbManager.getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
+      hitDown = true;
+      return;
+    }
+    if (hitDown) {
+      return;
+    }
     BlockId blockId = block.getBlockId();
     synchronized (blockLock) {
       try {
@@ -239,17 +278,6 @@ public class TronNetDelegate {
         logger.error("Process block failed, {}, reason: {}.", blockId.getString(), e.getMessage());
         throw new P2pException(TypeEnum.BAD_BLOCK, e);
       }
-    }
-    if (dbManager.getLatestSolidityNumShutDown() > 0
-        && dbManager.getLatestSolidityNumShutDown() == dbManager.getDynamicPropertiesStore()
-        .getLatestBlockHeaderNumberFromDB()) {
-
-      logger.info("begin shutdown, currentBlockNum:{}, DbBlockNum:{} ,solidifiedBlockNum:{}.",
-          dbManager.getDynamicPropertiesStore().getLatestBlockHeaderNumber(),
-          dbManager.getDynamicPropertiesStore().getLatestBlockHeaderNumberFromDB(),
-          dbManager.getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
-      // https://stackoverflow.com/questions/2614774/
-      System.exit(0);
     }
   }
 
