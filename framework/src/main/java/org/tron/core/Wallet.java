@@ -110,6 +110,7 @@ import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.ByteUtil;
 import org.tron.common.utils.DecodeUtil;
 import org.tron.common.utils.Sha256Hash;
+import org.tron.common.utils.StringUtil;
 import org.tron.common.utils.Utils;
 import org.tron.common.utils.WalletUtil;
 import org.tron.common.zksnark.IncrementalMerkleTreeContainer;
@@ -1348,7 +1349,10 @@ public class Wallet {
     try {
       block = chainBaseManager.getBlockStore().get(blockId.toByteArray()).getInstance();
     } catch (StoreException e) {
-      logger.error(e.getMessage());
+      e.printStackTrace();
+      logger.error("blockId: ByteString:{}", blockId);
+      logger.error("blockId: Bytesize:{}", blockId.toByteArray().length);
+      logger.error("blockId: {}", StringUtil.createReadableString(blockId), e);
     }
     return block;
   }
