@@ -286,13 +286,19 @@ public class Constant {
   public static final String METRICS_INFLUXDB_IP = "node.metrics.influxdb.ip";
   public static final String METRICS_INFLUXDB_PORT = "node.metrics.influxdb.port";
   public static final String METRICS_INFLUXDB_DATABASE = "node.metrics.influxdb.database";
-  public static final String METRICS_REPORT_INTERVAL = "node.metrics.influxdb.metricsReportInterval";
+  public static final String METRICS_REPORT_INTERVAL =
+      "node.metrics.influxdb.metricsReportInterval";
 
   public static final String HISTORY_BALANCE_LOOKUP = "storage.balance.history.lookup";
   public static final String OPEN_PRINT_LOG = "node.openPrintLog";
   public static final String OPEN_TRANSACTION_SORT = "node.openTransactionSort";
 
-  public static final String  ALLOW_ACCOUNT_ASSET_OPTIMIZATION = "committee.allowAccountAssetOptimization";
+  public static final String ALLOW_ACCOUNT_ASSET_OPTIMIZATION =
+      "committee.allowAccountAssetOptimization";
 
   public static final String LOCAL_HOST = "127.0.0.1";
+
+  public static final String NODE_SHUTDOWN_BLOCK_TIME = "node.shutdown.BlockTime";
+  public static final String NODE_SHUTDOWN_BLOCK_HEIGHT = "node.shutdown.BlockHeight";
+  public static final String NODE_SHUTDOWN_BLOCK_COUNT = "node.shutdown.BlockCount";
 }
