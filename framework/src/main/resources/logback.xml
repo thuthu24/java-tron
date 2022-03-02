@@ -45,6 +45,23 @@
     <appender-ref ref="FILE"/>
   </appender>
 
+  <appender name="trxAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <File>./logs/trx.log</File>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>./logs/trx/trx-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+      <maxFileSize>500MB</maxFileSize>
+      <maxHistory>7</maxHistory>
+      <totalSizeCap>50GB</totalSizeCap>
+    </rollingPolicy>
+    <encoder charset="UTF-8">
+      <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] %level [%t] [%c{1}]\(%F:%L\) - %msg%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>TRACE</level>
+    </filter>
+  </appender>
+
   <root level="INFO">
     <!--<appender-ref ref="CONSOLE"/>-->
     <appender-ref ref="ASYNC"/>
@@ -65,6 +82,10 @@
 
   <logger level="INFO" name="tool" additivity="false">
     <appender-ref ref="CONSOLE"/>
+  </logger>
+
+  <logger level="INFO" name="trx" additivity="false">
+    <appender-ref ref="trxAppender"/>
   </logger>
 
 </configuration>

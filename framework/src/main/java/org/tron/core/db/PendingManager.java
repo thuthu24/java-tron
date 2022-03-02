@@ -23,8 +23,13 @@ public class PendingManager implements AutoCloseable {
     long now = System.currentTimeMillis();
     Iterator<TransactionCapsule> iterator = dbManager.getRePushTransactions().iterator();
     while (iterator.hasNext()) {
-      if (now - iterator.next().getTime() > timeout) {
+      TransactionCapsule tx = iterator.next();
+      if (now - tx.getTime() > timeout) {
         iterator.remove();
+        if (Args.getInstance().isOpenPrintLog()) {
+          logger.warn("[missed:timeout] remove tx from rePush, txId:{}",
+              tx.getTransactionId());
+        }
       }
     }
 
@@ -48,7 +53,8 @@ public class PendingManager implements AutoCloseable {
       if (System.currentTimeMillis() - tx.getTime() < timeout) {
         dbManager.getRePushTransactions().put(tx);
       } else if (Args.getInstance().isOpenPrintLog()) {
-        logger.warn("[timeout] remove tx from pending, txId:{}", tx.getTransactionId());
+        logger.warn("[missed:timeout] remove tx from pending, txId:{}",
+            tx.getTransactionId());
       }
     } catch (InterruptedException e) {
       logger.error(e.getMessage());

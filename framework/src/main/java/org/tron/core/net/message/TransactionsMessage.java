@@ -1,6 +1,10 @@
 package org.tron.core.net.message;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.tron.common.parameter.CommonParameter;
+import org.tron.common.utils.Sha256Hash;
 import org.tron.core.capsule.TransactionCapsule;
 import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.Transaction;
@@ -33,13 +37,24 @@ public class TransactionsMessage extends TronMessage {
 
   @Override
   public String toString() {
-    return new StringBuilder().append(super.toString()).append("trx size: ")
-        .append(this.transactions.getTransactionsList().size()).toString();
+    List<Sha256Hash> hashes = new ArrayList<>(getHashList());
+    StringBuilder builder = new StringBuilder();
+    builder.append(super.toString())
+        .append(", size: ").append(hashes.size())
+        .append(", trxs: ").append(hashes);
+    return builder.toString();
   }
 
   @Override
   public Class<?> getAnswerMessage() {
     return null;
+  }
+
+  public List<Sha256Hash> getHashList() {
+    return transactions.getTransactionsList().stream().map(
+        t -> Sha256Hash.of(CommonParameter.getInstance().isECKeyCryptoEngine(),
+            t.getRawData().toByteArray()))
+        .collect(Collectors.toList());
   }
 
 }

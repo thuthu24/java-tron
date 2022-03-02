@@ -500,6 +500,11 @@ public class CommonParameter {
   @Getter
   @Setter
   public boolean openPrintLog = true;
+
+  @Getter
+  @Setter
+  public boolean openPrintTxLog = false;
+
   @Getter
   @Setter
   public boolean openTransactionSort = false;

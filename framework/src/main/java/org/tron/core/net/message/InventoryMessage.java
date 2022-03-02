@@ -1,7 +1,6 @@
 package org.tron.core.net.message;
 
-import java.util.Deque;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.tron.common.utils.Sha256Hash;
@@ -59,14 +58,12 @@ public class InventoryMessage extends TronMessage {
 
   @Override
   public String toString() {
-    Deque<Sha256Hash> hashes = new LinkedList<>(getHashList());
+    List<Sha256Hash> hashes = new ArrayList<>(getHashList());
     StringBuilder builder = new StringBuilder();
-    builder.append(super.toString()).append("invType: ").append(getInvMessageType())
+    builder.append(super.toString())
+        .append(" invType: ").append(getInvMessageType())
         .append(", size: ").append(hashes.size())
-        .append(", First hash: ").append(hashes.peekFirst());
-    if (hashes.size() > 1) {
-      builder.append(", End hash: ").append(hashes.peekLast());
-    }
+        .append(", ids: ").append(hashes);
     return builder.toString();
   }
 

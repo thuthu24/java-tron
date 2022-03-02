@@ -195,6 +195,7 @@ public class Args extends CommonParameter {
     PARAMETER.allowTvmCompatibleEvm = 0;
     PARAMETER.historyBalanceLookup = false;
     PARAMETER.openPrintLog = true;
+    PARAMETER.openPrintTxLog = false;
     PARAMETER.openTransactionSort = false;
     PARAMETER.allowAccountAssetOptimization = 0;
     PARAMETER.disabledApiList = Collections.emptyList();
@@ -800,8 +801,8 @@ public class Args extends CommonParameter {
     // lite fullnode params
     PARAMETER.setLiteFullNode(checkIsLiteFullNode());
     PARAMETER.setOpenHistoryQueryWhenLiteFN(
-            config.hasPath(Constant.NODE_OPEN_HISTORY_QUERY_WHEN_LITEFN)
-                    && config.getBoolean(Constant.NODE_OPEN_HISTORY_QUERY_WHEN_LITEFN));
+        config.hasPath(Constant.NODE_OPEN_HISTORY_QUERY_WHEN_LITEFN)
+            && config.getBoolean(Constant.NODE_OPEN_HISTORY_QUERY_WHEN_LITEFN));
 
     PARAMETER.historyBalanceLookup = config.hasPath(Constant.HISTORY_BALANCE_LOOKUP) && config
         .getBoolean(Constant.HISTORY_BALANCE_LOOKUP);
@@ -810,12 +811,16 @@ public class Args extends CommonParameter {
       PARAMETER.openPrintLog = config.getBoolean(Constant.OPEN_PRINT_LOG);
     }
 
+    if (config.hasPath(Constant.OPEN_PRINT_TX_LOG)) {
+      PARAMETER.openPrintTxLog = config.getBoolean(Constant.OPEN_PRINT_TX_LOG);
+    }
+
     PARAMETER.openTransactionSort = config.hasPath(Constant.OPEN_TRANSACTION_SORT) && config
         .getBoolean(Constant.OPEN_TRANSACTION_SORT);
 
     PARAMETER.allowAccountAssetOptimization = config
-            .hasPath(Constant.ALLOW_ACCOUNT_ASSET_OPTIMIZATION) ? config
-            .getInt(Constant.ALLOW_ACCOUNT_ASSET_OPTIMIZATION) : 0;
+        .hasPath(Constant.ALLOW_ACCOUNT_ASSET_OPTIMIZATION) ? config
+        .getInt(Constant.ALLOW_ACCOUNT_ASSET_OPTIMIZATION) : 0;
 
     PARAMETER.disabledApiList =
         config.hasPath(Constant.NODE_DISABLED_API_LIST)

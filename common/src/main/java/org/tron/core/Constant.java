@@ -290,6 +290,7 @@ public class Constant {
 
   public static final String HISTORY_BALANCE_LOOKUP = "storage.balance.history.lookup";
   public static final String OPEN_PRINT_LOG = "node.openPrintLog";
+  public static final String OPEN_PRINT_TX_LOG = "node.openPrintTxLog";
   public static final String OPEN_TRANSACTION_SORT = "node.openTransactionSort";
 
   public static final String  ALLOW_ACCOUNT_ASSET_OPTIMIZATION = "committee.allowAccountAssetOptimization";

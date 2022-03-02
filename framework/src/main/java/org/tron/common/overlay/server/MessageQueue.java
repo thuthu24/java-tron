@@ -13,10 +13,12 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.tron.common.logs.TrxLog;
 import org.tron.common.overlay.message.Message;
 import org.tron.common.overlay.message.PingMessage;
 import org.tron.common.overlay.message.PongMessage;
 import org.tron.consensus.pbft.message.PbftBaseMessage;
+import org.tron.core.config.args.Args;
 import org.tron.core.metrics.MetricsKey;
 import org.tron.core.metrics.MetricsUtil;
 import org.tron.core.net.message.InventoryMessage;
@@ -106,7 +108,12 @@ public class MessageQueue {
       sendPing = now;
     }
     if (needToLog(msg)) {
-      logger.info("Send to {}, {} ", ctx.channel().remoteAddress(), msg);
+      if (isTransactions(msg)) {
+        TrxLog.getLogger().info("Send to {}, {} ", ctx.channel().remoteAddress(), msg);
+      } else {
+        logger.info("Send to {}, {} ", ctx.channel().remoteAddress(), msg);
+      }
+
     }
     channel.getNodeStatistics().messageStatistics.addTcpOutMessage(msg);
     MetricsUtil.meterMark(MetricsKey.NET_TCP_OUT_TRAFFIC, msg.getSendData().readableBytes());
@@ -121,7 +128,11 @@ public class MessageQueue {
 
   public void receivedMessage(Message msg) {
     if (needToLog(msg)) {
-      logger.info("Receive from {}, {}", ctx.channel().remoteAddress(), msg);
+      if (isTransactions(msg)) {
+        TrxLog.getLogger().info("Receive from {}, {}", ctx.channel().remoteAddress(), msg);
+      } else {
+        logger.info("Receive from {}, {}", ctx.channel().remoteAddress(), msg);
+      }
     }
     channel.getNodeStatistics().messageStatistics.addTcpInMessage(msg);
     MessageRoundTrip rt = requestQueue.peek();
@@ -156,17 +167,25 @@ public class MessageQueue {
   private boolean needToLog(Message msg) {
     if (msg instanceof PingMessage
         || msg instanceof PongMessage
-        || msg instanceof TransactionsMessage
         || msg instanceof PbftBaseMessage) {
       return false;
     }
 
+    if (msg instanceof TransactionsMessage) {
+      return Args.PARAMETER.isOpenPrintTxLog();
+    }
+
     if (msg instanceof InventoryMessage
         && ((InventoryMessage) msg).getInventoryType().equals(InventoryType.TRX)) {
-      return false;
+      return Args.PARAMETER.isOpenPrintTxLog();
     }
 
     return true;
+  }
+
+  private boolean isTransactions(Message msg) {
+    return msg instanceof TransactionsMessage || (msg instanceof InventoryMessage
+        && ((InventoryMessage) msg).getInventoryType().equals(InventoryType.TRX));
   }
 
   private void send() {

@@ -225,6 +225,7 @@ public class Manager {
   // log filter
   private boolean isRunFilterProcessThread = true;
   private BlockingQueue<FilterTriggerCapsule> filterCapsuleQueue;
+  private final boolean openLog = Args.getInstance().isOpenPrintLog();
 
   /**
    * Cycle thread to rePush Transactions
@@ -244,7 +245,8 @@ public class Manager {
             if (ex instanceof InterruptedException) {
               Thread.currentThread().interrupt();
             }
-            logger.error("unknown exception happened in rePush loop", ex);
+            logger.error("[missed:error] unknown exception happened in rePush loop, txId:{} ",
+                tx == null ? "" : tx.getTransactionId(), ex);
           } finally {
             if (tx != null) {
               getRePushTransactions().remove(tx);
@@ -662,6 +664,10 @@ public class Manager {
   void validateCommon(TransactionCapsule transactionCapsule)
       throws TransactionExpirationException, TooBigTransactionException {
     if (transactionCapsule.getData().length > Constant.TRANSACTION_MAX_BYTE_SIZE) {
+      if (openLog) {
+        logger.warn("[missed:tooBig], txId:{},size:{} bytes",
+            transactionCapsule.getTransactionId(), transactionCapsule.getData().length);
+      }
       throw new TooBigTransactionException(
           "too big transaction, the size is " + transactionCapsule.getData().length + " bytes");
     }
@@ -669,6 +675,10 @@ public class Manager {
     long headBlockTime = chainBaseManager.getHeadBlockTimeStamp();
     if (transactionExpiration <= headBlockTime
         || transactionExpiration > headBlockTime + Constant.MAXIMUM_TIME_UNTIL_EXPIRATION) {
+      if (openLog) {
+        logger.warn("[missed:expired], txId:{},transactionExpiration:{}",
+            transactionCapsule.getTransactionId(), transactionExpiration);
+      }
       throw new TransactionExpirationException(
           "transaction expiration, transaction expiration time is " + transactionExpiration
               + ", but headBlockTime is " + headBlockTime);
@@ -1726,7 +1736,7 @@ public class Manager {
     } catch (TooBigTransactionException e) {
       logger.debug("too big transaction");
     } catch (TransactionExpirationException e) {
-      logger.debug("expiration transaction");
+      logger.warn("expiration transaction {}", tx.getTransactionId());
     } catch (ReceiptCheckErrException e) {
       logger.debug("outOfSlotTime transaction");
     } catch (TooBigTransactionResultException e) {
