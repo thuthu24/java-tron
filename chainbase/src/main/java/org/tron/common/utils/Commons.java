@@ -88,9 +88,8 @@ public class Commons {
 
   private static String defaultTag() {
     StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-    StackTraceElement log = stackTrace[2];
-    String tag = log.getClassName() + "." + log.getMethodName() + ":" + log.getLineNumber();
-    return tag;
+    StackTraceElement log = stackTrace[3];
+    return log.getClassName() + "." + log.getMethodName() + ":" + log.getLineNumber();
   }
 
   public static ExchangeStore getExchangeStoreFinal(DynamicPropertiesStore dynamicPropertiesStore,
