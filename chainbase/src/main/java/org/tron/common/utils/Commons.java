@@ -77,7 +77,20 @@ public class Commons {
           StringUtil.createReadableString(account.createDbKey()) + " insufficient balance");
     }
     account.setBalance(Math.addExact(balance, amount));
+    if ("TLw48YQsUcKTkuPnn9nHjieacvntHADQaw".equals(
+        StringUtil.encode58Check(account.getAddress().toByteArray()))) {
+      logger.info("path :{}, account: {},before:{},amount:{},balance: {} ",
+          defaultTag(), StringUtil.encode58Check(account.getAddress().toByteArray()),
+          balance, amount, account.getBalance());
+    }
     accountStore.put(account.getAddress().toByteArray(), account);
+  }
+
+  private static String defaultTag() {
+    StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+    StackTraceElement log = stackTrace[2];
+    String tag = log.getClassName() + "." + log.getMethodName() + ":" + log.getLineNumber();
+    return tag;
   }
 
   public static ExchangeStore getExchangeStoreFinal(DynamicPropertiesStore dynamicPropertiesStore,
