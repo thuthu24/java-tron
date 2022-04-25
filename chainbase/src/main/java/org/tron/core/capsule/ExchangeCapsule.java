@@ -141,6 +141,35 @@ public class ExchangeCapsule implements ProtoCapsule<Exchange> {
     return buyTokenQuant;
   }
 
+  public long transactionStrict(byte[] sellTokenID, long sellTokenQuant) {
+    long supply = 1_000_000_000_000_000_000L;
+    ExchangeProcessor processor = new ExchangeProcessor(supply);
+
+    long buyTokenQuant = 0;
+    long firstTokenBalance = this.exchange.getFirstTokenBalance();
+    long secondTokenBalance = this.exchange.getSecondTokenBalance();
+
+    if (this.exchange.getFirstTokenId().equals(ByteString.copyFrom(sellTokenID))) {
+      buyTokenQuant = processor.exchangeStrict(firstTokenBalance,
+          secondTokenBalance,
+          sellTokenQuant);
+      this.exchange = this.exchange.toBuilder()
+          .setFirstTokenBalance(firstTokenBalance + sellTokenQuant)
+          .setSecondTokenBalance(secondTokenBalance - buyTokenQuant)
+          .build();
+    } else {
+      buyTokenQuant = processor.exchangeStrict(secondTokenBalance,
+          firstTokenBalance,
+          sellTokenQuant);
+      this.exchange = this.exchange.toBuilder()
+          .setFirstTokenBalance(firstTokenBalance - buyTokenQuant)
+          .setSecondTokenBalance(secondTokenBalance + sellTokenQuant)
+          .build();
+    }
+
+    return buyTokenQuant;
+  }
+
   //be carefully, this function should be used only before AllowSameTokenName proposal is not active
   public void resetTokenWithID(
       AssetIssueStore assetIssueStore, DynamicPropertiesStore dynamicPropertiesStore) {

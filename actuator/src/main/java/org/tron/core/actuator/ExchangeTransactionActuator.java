@@ -24,7 +24,6 @@ import org.tron.core.store.AssetIssueStore;
 import org.tron.core.store.DynamicPropertiesStore;
 import org.tron.core.store.ExchangeStore;
 import org.tron.core.store.ExchangeV2Store;
-import org.tron.core.utils.TransactionUtil;
 import org.tron.protos.Protocol.Transaction.Contract.ContractType;
 import org.tron.protos.Protocol.Transaction.Result.code;
 import org.tron.protos.contract.ExchangeContract.ExchangeTransactionContract;
@@ -57,7 +56,7 @@ public class ExchangeTransactionActuator extends AbstractActuator {
 
       ExchangeCapsule exchangeCapsule = Commons
           .getExchangeStoreFinal(dynamicStore, exchangeStore, exchangeV2Store).
-              get(ByteArray.fromLong(exchangeTransactionContract.getExchangeId()));
+          get(ByteArray.fromLong(exchangeTransactionContract.getExchangeId()));
 
       byte[] firstTokenID = exchangeCapsule.getFirstTokenId();
       byte[] secondTokenID = exchangeCapsule.getSecondTokenId();
@@ -67,6 +66,12 @@ public class ExchangeTransactionActuator extends AbstractActuator {
 
       byte[] anotherTokenID;
       long anotherTokenQuant = exchangeCapsule.transaction(tokenID, tokenQuant);
+      long anotherTokenQuantStrict = exchangeCapsule.transactionStrict(tokenID, tokenQuant);
+      if (anotherTokenQuant != anotherTokenQuantStrict) {
+        logger.warn("tx: {}, anotherTokenQuant {}, anotherTokenQuantStrict{}",
+            tx.getTransactionId(), anotherTokenQuant, anotherTokenQuantStrict);
+      }
+
 
       if (Arrays.equals(tokenID, firstTokenID)) {
         anotherTokenID = secondTokenID;
