@@ -7,12 +7,14 @@ import org.eclipse.jetty.server.ConnectionLimit;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.tron.common.application.Service;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.core.config.args.Args;
 import org.tron.core.services.filter.HttpApiAccessFilter;
+import org.tron.core.services.filter.HttpInterceptor;
 import org.tron.core.services.filter.LiteFnQueryHttpFilter;
 import org.tron.core.services.interfaceOnPBFT.http.GetAccountByIdOnPBFTServlet;
 import org.tron.core.services.interfaceOnPBFT.http.GetAccountOnPBFTServlet;
@@ -251,6 +253,13 @@ public class HttpApiOnPBFTService implements Service {
       // api access filter
       context.addFilter(new FilterHolder(httpApiAccessFilter), "/*",
           EnumSet.allOf(DispatcherType.class));
+
+      // metrics filter
+      ServletHandler handler = new ServletHandler();
+      FilterHolder fh = handler
+          .addFilterWithMapping(HttpInterceptor.class, "/*",
+              EnumSet.of(DispatcherType.REQUEST));
+      context.addFilter(fh, "/*", EnumSet.of(DispatcherType.REQUEST));
 
       server.start();
     } catch (Exception e) {

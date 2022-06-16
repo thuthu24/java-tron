@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.common.application.Service;
 import org.tron.common.parameter.CommonParameter;
+import org.tron.core.services.filter.HttpApiAccessFilter;
 import org.tron.core.services.filter.HttpInterceptor;
 
 @Component
@@ -25,6 +26,9 @@ public class FullNodeJsonRpcHttpService implements Service {
 
   @Autowired
   private JsonRpcServlet jsonRpcServlet;
+
+  @Autowired
+  private HttpApiAccessFilter httpApiAccessFilter;
 
   @Override
   public void init() {
@@ -49,7 +53,11 @@ public class FullNodeJsonRpcHttpService implements Service {
         server.addBean(new ConnectionLimit(maxHttpConnectNumber, server));
       }
 
-      // filter
+      // api access filter
+      context.addFilter(new FilterHolder(httpApiAccessFilter), "/*",
+          EnumSet.allOf(DispatcherType.class));
+
+      // metrics filter
       ServletHandler handler = new ServletHandler();
       FilterHolder fh = handler
           .addFilterWithMapping(HttpInterceptor.class, "/*",

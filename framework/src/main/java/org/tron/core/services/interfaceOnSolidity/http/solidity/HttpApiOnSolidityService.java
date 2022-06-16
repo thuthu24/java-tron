@@ -15,6 +15,7 @@ import org.tron.common.application.Service;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.core.config.args.Args;
 import org.tron.core.services.filter.HttpApiAccessFilter;
+import org.tron.core.services.filter.HttpInterceptor;
 import org.tron.core.services.filter.LiteFnQueryHttpFilter;
 import org.tron.core.services.interfaceOnSolidity.http.GetAccountByIdOnSolidityServlet;
 import org.tron.core.services.interfaceOnSolidity.http.GetAccountOnSolidityServlet;
@@ -269,6 +270,13 @@ public class HttpApiOnSolidityService implements Service {
       context.getServletHandler().getFilterMappings()[1]
           .setPathSpecs(new String[] {"/walletsolidity/*",
               "/wallet/getnodeinfo"});
+
+      // metrics filter
+      ServletHandler handler = new ServletHandler();
+      FilterHolder fh = handler
+          .addFilterWithMapping(HttpInterceptor.class, "/*",
+              EnumSet.of(DispatcherType.REQUEST));
+      context.addFilter(fh, "/*", EnumSet.of(DispatcherType.REQUEST));
 
       int maxHttpConnectNumber = Args.getInstance().getMaxHttpConnectNumber();
       if (maxHttpConnectNumber > 0) {

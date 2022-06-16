@@ -559,7 +559,7 @@ public class FullNodeHttpApiService implements Service {
       // metrics filter
       ServletHandler handler = new ServletHandler();
       FilterHolder fh = handler
-          .addFilterWithMapping((Class<? extends Filter>) HttpInterceptor.class, "/*",
+          .addFilterWithMapping(HttpInterceptor.class, "/*",
               EnumSet.of(DispatcherType.REQUEST));
       context.addFilter(fh, "/*", EnumSet.of(DispatcherType.REQUEST));
 
