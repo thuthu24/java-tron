@@ -16,6 +16,7 @@ import org.tron.core.exception.ContractExeException;
 import org.tron.core.exception.ContractValidateException;
 import org.tron.core.exception.ReceiptCheckErrException;
 import org.tron.core.exception.VMIllegalException;
+import org.tron.core.vm.config.ConfigLoader;
 import org.tron.protos.Protocol.Transaction;
 import stest.tron.wallet.common.client.utils.AbiUtil;
 import stest.tron.wallet.common.client.utils.DataWord;
@@ -104,6 +105,7 @@ public class Create2Test extends VMTestBase {
     manager.getDynamicPropertiesStore().saveAllowTvmTransferTrc10(1);
     manager.getDynamicPropertiesStore().saveAllowTvmConstantinople(1);
     manager.getDynamicPropertiesStore().saveAllowTvmIstanbul(0);
+    ConfigLoader.disable = false;
     String contractName = "Factory_0";
     byte[] address = Hex.decode(OWNER_ADDRESS);
     String abi = "[{\"constant\":false,\"inputs\":[{\"name\":\"code\",\"type\":\"bytes\"},"

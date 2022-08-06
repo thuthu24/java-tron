@@ -7,10 +7,8 @@ import org.testng.annotations.Test;
 import org.tron.api.GrpcAPI;
 import org.tron.api.WalletGrpc;
 import org.tron.api.WalletSolidityGrpc;
-import org.tron.core.Wallet;
 import org.tron.protos.Protocol;
 import stest.tron.wallet.common.client.Configuration;
-import stest.tron.wallet.common.client.Parameter;
 import stest.tron.wallet.common.client.utils.PublicMethed;
 
 public class GetTransactionInfoByBlockNumFromSolidity {
@@ -26,9 +24,9 @@ public class GetTransactionInfoByBlockNumFromSolidity {
 
   @Test(enabled = true, description = "test getTransactionInfoByBlockNumFromSolidity")
   public void test01GetTransactionInfoByBlockNumFromSolidity() {
-    channelFull = ManagedChannelBuilder.forTarget(fullNode).usePlaintext(true).build();
+    channelFull = ManagedChannelBuilder.forTarget(fullNode).usePlaintext().build();
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
-    channelSolidity = ManagedChannelBuilder.forTarget(solidityNode).usePlaintext(true).build();
+    channelSolidity = ManagedChannelBuilder.forTarget(solidityNode).usePlaintext().build();
     blockingStubSolidity = WalletSolidityGrpc.newBlockingStub(channelSolidity);
 
     Protocol.Block solidityCurrentBlock =

@@ -12,7 +12,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 import org.tron.api.GrpcAPI.AccountResourceMessage;
 import org.tron.api.GrpcAPI.TransactionExtention;
@@ -21,13 +20,11 @@ import org.tron.api.WalletSolidityGrpc;
 import org.tron.common.crypto.ECKey;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Utils;
-import org.tron.core.Wallet;
 import org.tron.protos.Protocol.Account;
 import org.tron.protos.Protocol.Transaction;
 import org.tron.protos.Protocol.TransactionInfo;
 import org.tron.protos.contract.SmartContractOuterClass.SmartContract;
 import stest.tron.wallet.common.client.Configuration;
-import stest.tron.wallet.common.client.Parameter.CommonConstant;
 import stest.tron.wallet.common.client.utils.PublicMethed;
 
 @Slf4j
@@ -64,16 +61,16 @@ public class TriggerConstant001 {
   @BeforeClass(enabled = true)
   public void beforeClass() {
     PublicMethed.printAddress(contractExcKey);
-    channelFull = ManagedChannelBuilder.forTarget(fullnode).usePlaintext(true).build();
+    channelFull = ManagedChannelBuilder.forTarget(fullnode).usePlaintext().build();
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
-    channelFull1 = ManagedChannelBuilder.forTarget(fullnode1).usePlaintext(true).build();
+    channelFull1 = ManagedChannelBuilder.forTarget(fullnode1).usePlaintext().build();
     blockingStubFull1 = WalletGrpc.newBlockingStub(channelFull1);
 
-    channelSolidity = ManagedChannelBuilder.forTarget(soliditynode).usePlaintext(true).build();
+    channelSolidity = ManagedChannelBuilder.forTarget(soliditynode).usePlaintext().build();
     blockingStubSolidity = WalletSolidityGrpc.newBlockingStub(channelSolidity);
 
     channelRealSolidity =
-        ManagedChannelBuilder.forTarget(realSoliditynode).usePlaintext(true).build();
+        ManagedChannelBuilder.forTarget(realSoliditynode).usePlaintext().build();
     blockingStubRealSolidity = WalletSolidityGrpc.newBlockingStub(channelRealSolidity);
 
     {
