@@ -72,6 +72,19 @@ public class LevelDbDataSourceImpl extends DbStat implements DbSourceInter<byte[
   private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
   private static final String LEVELDB = "LEVELDB";
 
+  private static final String BLOCK_DB_NAME = "block";
+  private static final String BLOCK_INDEX_DB_NAME = "block-index";
+  private static final String TRANS_DB_NAME = "trans";
+  private static final String TRANSACTION_RET_DB_NAME = "transactionRetStore";
+  private static final String TRANSACTION_HISTORY_DB_NAME = "transactionHistoryStore";
+
+  private static List<String> archiveDbs = Arrays.asList(
+      BLOCK_DB_NAME,
+      BLOCK_INDEX_DB_NAME,
+      TRANS_DB_NAME,
+      TRANSACTION_RET_DB_NAME,
+      TRANSACTION_HISTORY_DB_NAME);
+
   /**
    * constructor.
    */
@@ -236,6 +249,7 @@ public class LevelDbDataSourceImpl extends DbStat implements DbSourceInter<byte[
   public void deleteData(byte[] key) {
     resetDbLock.readLock().lock();
     try {
+      checkDelete();
       database.delete(key, writeOptions);
     } finally {
       resetDbLock.readLock().unlock();
@@ -407,6 +421,7 @@ public class LevelDbDataSourceImpl extends DbStat implements DbSourceInter<byte[
   private void innerBatchUpdate(Map<byte[], byte[]> rows, WriteBatch batch) {
     rows.forEach((key, value) -> {
       if (value == null) {
+        checkDelete();
         batch.delete(key);
       } else {
         batch.put(key, value);
@@ -518,6 +533,12 @@ public class LevelDbDataSourceImpl extends DbStat implements DbSourceInter<byte[
 
   @Override public void stat() {
     this.statProperty();
+  }
+
+  private void checkDelete() {
+    if (archiveDbs.contains(this.getDBName())) {
+      throw new IllegalStateException(String.format("%s delete detected",this.getDBName()));
+    }
   }
 
 }
