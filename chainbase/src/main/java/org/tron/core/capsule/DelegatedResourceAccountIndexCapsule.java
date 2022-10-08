@@ -121,4 +121,9 @@ public class DelegatedResourceAccountIndexCapsule implements
     return this.delegatedResourceAccountIndex;
   }
 
+  @Override
+  public DelegatedResourceAccountIndexCapsule newInstance() {
+    return new DelegatedResourceAccountIndexCapsule(this.delegatedResourceAccountIndex);
+  }
+
 }

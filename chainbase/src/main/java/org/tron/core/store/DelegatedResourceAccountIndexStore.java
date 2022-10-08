@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -21,14 +20,12 @@ public class DelegatedResourceAccountIndexStore extends
 
   @Autowired
   public DelegatedResourceAccountIndexStore(@Value("DelegatedResourceAccountIndex") String dbName) {
-    super(dbName);
+    super(dbName, DelegatedResourceAccountIndexCapsule.class);
   }
 
   @Override
   public DelegatedResourceAccountIndexCapsule get(byte[] key) {
-
-    byte[] value = revokingDB.getUnchecked(key);
-    return ArrayUtils.isEmpty(value) ? null : new DelegatedResourceAccountIndexCapsule(value);
+    return getNonEmpty(key);
   }
 
   private byte[] createKey(byte[] prefix, byte[] address1, byte[] address2) {

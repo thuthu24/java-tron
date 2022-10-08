@@ -16,12 +16,13 @@ import org.tron.common.parameter.CommonParameter;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.ChainBaseManager;
 import org.tron.core.capsule.AccountCapsule;
+import org.tron.core.capsule.ProtoCapsule;
 import org.tron.core.db2.common.DB;
 import org.tron.core.db2.common.Flusher;
 import org.tron.core.db2.common.WrappedByteArray;
 import org.tron.core.store.AccountAssetStore;
 
-public class SnapshotRoot extends AbstractSnapshot<byte[], byte[]> {
+public class SnapshotRoot extends AbstractSnapshot<byte[], byte[], byte[]> {
 
   @Getter
   private Snapshot solidity;
@@ -43,6 +44,16 @@ public class SnapshotRoot extends AbstractSnapshot<byte[], byte[]> {
   private boolean needOptAsset() {
     return isAccountDB && ChainBaseManager.getInstance().getDynamicPropertiesStore()
             .getAllowAccountAssetOptimizationFromRoot() == 1;
+  }
+
+  @Override
+  public boolean isRoot() {
+    return true;
+  }
+
+  @Override
+  public boolean isImpl() {
+    return false;
   }
 
   @Override
@@ -90,7 +101,7 @@ public class SnapshotRoot extends AbstractSnapshot<byte[], byte[]> {
 
   @Override
   public void merge(Snapshot from) {
-    SnapshotImpl snapshot = (SnapshotImpl) from;
+    SnapshotImpl<? extends ProtoCapsule> snapshot = (SnapshotImpl) from;
     Map<WrappedByteArray, WrappedByteArray> batch = Streams.stream(snapshot.db)
         .map(e -> Maps.immutableEntry(WrappedByteArray.of(e.getKey().getBytes()),
             WrappedByteArray.of(e.getValue().getBytes())))
@@ -106,7 +117,7 @@ public class SnapshotRoot extends AbstractSnapshot<byte[], byte[]> {
   public void merge(List<Snapshot> snapshots) {
     Map<WrappedByteArray, WrappedByteArray> batch = new HashMap<>();
     for (Snapshot snapshot : snapshots) {
-      SnapshotImpl from = (SnapshotImpl) snapshot;
+      SnapshotImpl<? extends ProtoCapsule> from = (SnapshotImpl) snapshot;
       Streams.stream(from.db)
           .map(e -> Maps.immutableEntry(WrappedByteArray.of(e.getKey().getBytes()),
               WrappedByteArray.of(e.getValue().getBytes())))
