@@ -1,6 +1,7 @@
 package org.tron.plugins.utils.db;
 
 import java.io.IOException;
+import java.util.Map;
 import org.rocksdb.RocksIterator;
 
 public class RockDBIterator implements DBIterator {
@@ -37,8 +38,26 @@ public class RockDBIterator implements DBIterator {
   }
 
   @Override
-  public void next() {
+  public Map.Entry<byte[], byte[]> next() {
+    byte[] key = iterator.key();
+    byte[] value = iterator.value();
     iterator.next();
+    return new Map.Entry<byte[], byte[]>() {
+      @Override
+      public byte[] getKey() {
+        return key;
+      }
+
+      @Override
+      public byte[] getValue() {
+        return value;
+      }
+
+      @Override
+      public byte[] setValue(byte[] value) {
+        throw new UnsupportedOperationException();
+      }
+    };
   }
 
   @Override

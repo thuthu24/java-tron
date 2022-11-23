@@ -66,12 +66,13 @@ public class DbTool {
 
   /**
    * Get the DB object according to the specified path and engine.
+   *
    * @param sourceDir to be open parent path
    * @param dbName database name
    * @param type engine
-   * @return
-   * @throws IOException
-   * @throws RocksDBException
+   * @return db object
+   * @throws IOException leveldb error
+   * @throws RocksDBException rocksdb error
    */
   public static DBInterface getDB(String sourceDir, String dbName, DbType type)
       throws IOException, RocksDBException {
@@ -123,8 +124,10 @@ public class DbTool {
 
   /**
    * Close db.
+   *
    * @param sourceDir db parentPath
    * @param dbName db dirname
+   *
    * @throws IOException IOException
    */
   public static void closeDB(String sourceDir, String dbName)

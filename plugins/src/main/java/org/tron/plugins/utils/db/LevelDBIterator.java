@@ -1,6 +1,7 @@
 package org.tron.plugins.utils.db;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class LevelDBIterator implements DBIterator {
 
@@ -36,8 +37,8 @@ public class LevelDBIterator implements DBIterator {
   }
 
   @Override
-  public void next() {
-    iterator.next();
+  public Map.Entry<byte[], byte[]> next() {
+    return iterator.next();
   }
 
   @Override

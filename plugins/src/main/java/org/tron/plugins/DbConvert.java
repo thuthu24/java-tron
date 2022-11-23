@@ -275,7 +275,7 @@ public class DbConvert implements Callable<Integer> {
               new org.iq80.leveldb.ReadOptions().fillCache(false))) {
 
         levelIterator.seekToFirst();
-        long i = 0;
+
         while (levelIterator.hasNext()) {
           Map.Entry<byte[], byte[]> entry = levelIterator.next();
           byte[] key = entry.getKey();
@@ -288,15 +288,6 @@ public class DbConvert implements Callable<Integer> {
           if (keys.size() >= BATCH) {
             batchInsert(rocks, keys, values);
           }
-          // https://github.com/apache/rocketmq/pull/4903, help gc
-          if (i % 1000 == 0) {
-            try {
-              Thread.sleep(0);
-            } catch (InterruptedException e) {
-              logger.error("Interrupted", e);
-            }
-          }
-          i++;
         }
         // clear
         if (!keys.isEmpty()) {
@@ -329,21 +320,12 @@ public class DbConvert implements Callable<Integer> {
 
         // check
         logger.info("check database {} start", this.dbName);
-        long i = 0;
-        for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next(), i++) {
+        for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
           byte[] key = rocksIterator.key();
           byte[] value = rocksIterator.value();
           dstDbKeyCount++;
           dstDbKeySum = byteArrayToIntWithOne(dstDbKeySum, key);
           dstDbValueSum = byteArrayToIntWithOne(dstDbValueSum, value);
-          // https://github.com/apache/rocketmq/pull/4903, help gc
-          if (i % 1000 == 0) {
-            try {
-              Thread.sleep(0);
-            } catch (InterruptedException e) {
-              logger.error("Interrupted", e);
-            }
-          }
         }
         logger.info("Check database {} end,dstDbKeyCount {}, dstDbKeySum {}, dstDbValueSum {},"
                 + "srcDbKeyCount {}, srcDbKeySum {}, srcDbValueSum {}",

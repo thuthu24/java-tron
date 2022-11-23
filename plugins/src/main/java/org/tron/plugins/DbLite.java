@@ -62,8 +62,6 @@ public class DbLite implements Callable<Integer> {
   private static final String PROPERTIES_DB_NAME = "properties";
   private static final String TRANS_CACHE_DB_NAME = "trans-cache";
 
-  private static final String DIR_FORMAT_STRING = "%s%s%s";
-
   private static final List<String> archiveDbs = Arrays.asList(
       BLOCK_DB_NAME,
       BLOCK_INDEX_DB_NAME,
@@ -168,7 +166,9 @@ public class DbLite implements Callable<Integer> {
       mergeCheckpoint2Snapshot(sourceDir, snapshotDir);
       // write genesisBlock , latest recent blocks and trans
       fillSnapshotBlockAndTransDb(sourceDir, snapshotDir);
-      generateInfoProperties(Paths.get(snapshotDir, INFO_FILE_NAME).toString(), sourceDir);
+      // save min block to info
+      generateInfoProperties(Paths.get(snapshotDir, INFO_FILE_NAME).toString(),
+          getSecondBlock(snapshotDir));
     } catch (IOException | RocksDBException e) {
       logger.error("Create snapshot failed, {}.", e.getMessage());
       spec.commandLine().getErr().println(spec.commandLine().getColorScheme()
@@ -200,7 +200,9 @@ public class DbLite implements Callable<Integer> {
       hasEnoughBlock(sourceDir);
       split(sourceDir, historyDir, archiveDbs);
       mergeCheckpoint2History(sourceDir, historyDir);
-      generateInfoProperties(Paths.get(historyDir, INFO_FILE_NAME).toString(), sourceDir);
+      // save max block to info
+      generateInfoProperties(Paths.get(historyDir, INFO_FILE_NAME).toString(),
+          getLatestBlockHeaderNum(sourceDir));
     } catch (IOException | RocksDBException e) {
       logger.error("Create history failed, {}.", e.getMessage());
       spec.commandLine().getErr().println(spec.commandLine().getColorScheme()
@@ -217,13 +219,12 @@ public class DbLite implements Callable<Integer> {
    *
    * @param historyDir the path that stores the history dataset
    *
-   * @param databaseDir lite fullnode database path
+   * @param liteDir lite fullnode database path
    */
-  public void completeHistoryData(String historyDir, String databaseDir) {
+  public void completeHistoryData(String historyDir, String liteDir) {
     logger.info("Start merge history to lite node.");
     spec.commandLine().getOut().println("Start merge history to lite node.");
     long start = System.currentTimeMillis();
-    BlockNumInfo blockNumInfo = null;
     try {
       // check historyDir is from lite data
       if (isLite(historyDir)) {
@@ -233,17 +234,17 @@ public class DbLite implements Callable<Integer> {
       }
       // 1. check block number and genesis block are compatible,
       //    and return the block numbers of snapshot and history
-      blockNumInfo = checkAndGetBlockNumInfo(historyDir, databaseDir);
+      BlockNumInfo blockNumInfo = checkAndGetBlockNumInfo(historyDir, liteDir);
       // 2. move archive dbs to bak
-      backupArchiveDbs(databaseDir);
-      // 3. copy history data to databaseDir
-      copyHistory2Database(historyDir, databaseDir);
-      // 4. delete the duplicate block data in history data
-      trimHistory(databaseDir, blockNumInfo);
+      backupArchiveDbs(liteDir);
+      // 3. copy history data to liteDir
+      copyHistory2Database(historyDir, liteDir);
+      // 4. delete the extra block data in history data
+      trimExtraHistory(liteDir, blockNumInfo);
       // 5. merge bak to database
-      mergeBak2Database(databaseDir);
+      mergeBak2Database(liteDir, blockNumInfo);
       // 6. delete snapshot flag
-      deleteSnapshotFlag(databaseDir);
+      deleteSnapshotFlag(liteDir);
     } catch (IOException | RocksDBException  e) {
       logger.error("Merge history data to database failed, {}.", e.getMessage());
       spec.commandLine().getErr().println(spec.commandLine().getColorScheme()
@@ -342,15 +343,14 @@ public class DbLite implements Callable<Integer> {
     }
   }
 
-  private void generateInfoProperties(String propertyfile, String databaseDir)
+  private void generateInfoProperties(String propertyfile, long num)
           throws IOException, RocksDBException {
     logger.info("Create {} for dataset.", INFO_FILE_NAME);
     spec.commandLine().getOut().format("Create %s for dataset.", INFO_FILE_NAME).println();
     if (!FileUtils.createFileIfNotExists(propertyfile)) {
       throw new RuntimeException("Create properties file failed.");
     }
-    if (!FileUtils.writeProperty(propertyfile, DBUtils.SPLIT_BLOCK_NUM,
-            Long.toString(getLatestBlockHeaderNum(databaseDir)))) {
+    if (!FileUtils.writeProperty(propertyfile, DBUtils.SPLIT_BLOCK_NUM, Long.toString(num))) {
       throw new RuntimeException("Write properties file failed.");
     }
   }
@@ -359,7 +359,7 @@ public class DbLite implements Callable<Integer> {
     // query latest_block_header_number from checkpoint first
     final String latestBlockHeaderNumber = "latest_block_header_number";
     List<String> cpList = getCheckpointV2List(databaseDir);
-    DBInterface checkpointDb = null;
+    DBInterface checkpointDb;
     if (cpList.size() > 0) {
       String lastestCp = cpList.get(cpList.size() - 1);
       checkpointDb = DbTool.getDB(
@@ -467,14 +467,12 @@ public class DbLite implements Callable<Integer> {
     return r;
   }
 
-  private BlockNumInfo checkAndGetBlockNumInfo(String historyDir, String databaseDir)
+  private BlockNumInfo checkAndGetBlockNumInfo(String historyDir, String liteDir)
           throws IOException, RocksDBException {
     logger.info("Check the compatibility of this history.");
     spec.commandLine().getOut().println("Check the compatibility of this history.");
-    String snapshotInfo = String.format(
-            DIR_FORMAT_STRING, databaseDir, File.separator, INFO_FILE_NAME);
-    String historyInfo = String.format(
-            DIR_FORMAT_STRING, historyDir, File.separator, INFO_FILE_NAME);
+    String snapshotInfo = Paths.get(liteDir, INFO_FILE_NAME).toString();
+    String historyInfo = Paths.get(historyDir, INFO_FILE_NAME).toString();
     if (!FileUtils.isExists(snapshotInfo)) {
       throw new FileNotFoundException(
               "Snapshot property file is not found. maybe this is a complete fullnode?");
@@ -482,35 +480,38 @@ public class DbLite implements Callable<Integer> {
     if (!FileUtils.isExists(historyInfo)) {
       throw new FileNotFoundException("history property file is not found.");
     }
-    long snapshotBlkNum = Long.parseLong(FileUtils.readProperty(snapshotInfo, DBUtils
+    // min block for snapshot
+    long snapshotMinNum = Long.parseLong(FileUtils.readProperty(snapshotInfo, DBUtils
             .SPLIT_BLOCK_NUM));
-    long historyBlkNum = Long.parseLong(FileUtils.readProperty(historyInfo, DBUtils
+    // max block for snapshot
+    long snapshotMaxNum = getLatestBlockHeaderNum(liteDir);
+    // max block for history
+    long historyMaxNum = Long.parseLong(FileUtils.readProperty(historyInfo, DBUtils
             .SPLIT_BLOCK_NUM));
-    if (historyBlkNum < snapshotBlkNum) {
+    if (historyMaxNum < snapshotMinNum) {
       throw new RuntimeException(
           String.format(
-              "History latest block number is lower than snapshot, history: %d, snapshot: %d",
-          historyBlkNum, snapshotBlkNum));
+              "History max block is lower than snapshot min number, history: %d, snapshot: %d",
+          historyMaxNum, snapshotMinNum));
     }
     // check genesis block is equal
-    if (!Arrays.equals(getGenesisBlockHash(databaseDir), getGenesisBlockHash(historyDir))) {
+    if (!Arrays.equals(getGenesisBlockHash(liteDir), getGenesisBlockHash(historyDir))) {
       throw new RuntimeException(String.format(
           "Genesis block hash is not equal, history: %s, database: %s",
           Arrays.toString(getGenesisBlockHash(historyDir)),
-          Arrays.toString(getGenesisBlockHash(databaseDir))));
+          Arrays.toString(getGenesisBlockHash(liteDir))));
     }
-    return new BlockNumInfo(snapshotBlkNum, historyBlkNum);
+    return new BlockNumInfo(snapshotMinNum, historyMaxNum, snapshotMaxNum);
   }
 
   private void backupArchiveDbs(String databaseDir) throws IOException {
-    String bakDir = String.format("%s%s%s%d",
-            databaseDir, File.separator, BACKUP_DIR_PREFIX, START_TIME);
+    Path bakDir = Paths.get(databaseDir, BACKUP_DIR_PREFIX + START_TIME);
     logger.info("Backup the archive dbs to {}.", bakDir);
     spec.commandLine().getOut().format("Backup the archive dbs to %s.", bakDir).println();
-    if (!FileUtils.createDirIfNotExists(bakDir)) {
+    if (!FileUtils.createDirIfNotExists(bakDir.toString())) {
       throw new RuntimeException(String.format("create bak dir %s failed", bakDir));
     }
-    FileUtils.copyDatabases(Paths.get(databaseDir), Paths.get(bakDir), archiveDbs);
+    FileUtils.copyDatabases(Paths.get(databaseDir), bakDir, archiveDbs);
     archiveDbs.forEach(db -> FileUtils.deleteDir(new File(databaseDir, db)));
   }
 
@@ -520,44 +521,83 @@ public class DbLite implements Callable<Integer> {
     FileUtils.copyDatabases(Paths.get(historyDir), Paths.get(databaseDir), archiveDbs);
   }
 
-  private void trimHistory(String databaseDir, BlockNumInfo blockNumInfo)
+  private void trimExtraHistory(String liteDir, BlockNumInfo blockNumInfo)
           throws IOException, RocksDBException {
-    logger.info("Begin to trim the history data.");
-    spec.commandLine().getOut().println("Begin to trim the history data.");
-    DBInterface blockIndexDb = DbTool.getDB(databaseDir, BLOCK_INDEX_DB_NAME);
-    DBInterface blockDb = DbTool.getDB(databaseDir, BLOCK_DB_NAME);
-    DBInterface transDb = DbTool.getDB(databaseDir, TRANS_DB_NAME);
-    DBInterface tranRetDb = DbTool.getDB(databaseDir, TRANSACTION_RET_DB_NAME);
-    for (long n = blockNumInfo.getHistoryBlkNum(); n > blockNumInfo.getSnapshotBlkNum(); n--) {
-      byte[] blockIdHash = blockIndexDb.get(ByteArray.fromLong(n));
-      Protocol.Block block = Protocol.Block.parseFrom(blockDb.get(blockIdHash));
-      // delete transactions
-      for (Protocol.Transaction e : block.getTransactionsList()) {
-        transDb.delete(DBUtils.getTransactionId(e).getBytes());
-      }
-      // delete transaction result
-      tranRetDb.delete(ByteArray.fromLong(n));
-      // delete block
-      blockDb.delete(blockIdHash);
-      // delete block index
-      blockIndexDb.delete(ByteArray.fromLong(n));
+    long start = blockNumInfo.getSnapshotMaxNum() + 1;
+    long end = blockNumInfo.getHistoryMaxNum();
+    if (start > end) {
+      logger.info("Ignore trimming the history data, from {} to {}.", start, end);
+      spec.commandLine().getOut()
+          .format("Ignore trimming the history data, from %d to %d.", start, end).println();
+      return;
     }
+    logger.info("Begin to trim the history data, from {} to {}.", start, end);
+    spec.commandLine().getOut()
+        .format("Begin to trim the history data, from %d to %d.", start, end).println();
+    DBInterface blockIndexDb = DbTool.getDB(liteDir, BLOCK_INDEX_DB_NAME);
+    DBInterface blockDb = DbTool.getDB(liteDir, BLOCK_DB_NAME);
+    DBInterface transDb = DbTool.getDB(liteDir, TRANS_DB_NAME);
+    DBInterface tranRetDb = DbTool.getDB(liteDir, TRANSACTION_RET_DB_NAME);
+
+
+    ProgressBar.wrap(LongStream.rangeClosed(start, end)
+        .boxed()
+        .sorted((a, b) -> Long.compare(b, a)), "trimHistory").forEach(n -> {
+          try {
+            byte[] blockIdHash = blockIndexDb.get(ByteArray.fromLong(n));
+            Protocol.Block block = Protocol.Block.parseFrom(blockDb.get(blockIdHash));
+            // delete transactions
+            for (Protocol.Transaction e : block.getTransactionsList()) {
+              transDb.delete(DBUtils.getTransactionId(e).getBytes());
+            }
+            // delete transaction result
+            tranRetDb.delete(ByteArray.fromLong(n));
+            // delete block
+            blockDb.delete(blockIdHash);
+            // delete block index
+            blockIndexDb.delete(ByteArray.fromLong(n));
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
-  private void mergeBak2Database(String databaseDir) throws IOException, RocksDBException {
-    String bakDir = String.format("%s%s%s%d",
-            databaseDir, File.separator, BACKUP_DIR_PREFIX, START_TIME);
-    logger.info("Begin to merge {} to database.", bakDir);
-    spec.commandLine().getOut().format("Begin to merge %s to database.", bakDir).println();
-    for (String dbName : archiveDbs) {
-      DBInterface bakDb = DbTool.getDB(bakDir, dbName);
-      DBInterface destDb = DbTool.getDB(databaseDir, dbName);
-      try (DBIterator iterator = bakDb.iterator()) {
-        for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-          destDb.put(iterator.getKey(), iterator.getValue());
-        }
-      }
+  private void mergeBak2Database(String liteDir, BlockNumInfo blockNumInfo) throws
+      IOException, RocksDBException {
+    long start = blockNumInfo.getHistoryMaxNum() + 1;
+    long end = blockNumInfo.getSnapshotMaxNum();
+
+    if (start > end) {
+      logger.info("Ignore merging the bak data, start {} end {}.", start, end);
+      spec.commandLine().getOut()
+          .format("Ignore merging the bak data, start %d end %d.", start, end).println();
+      return;
     }
+
+
+    Path bakDir = Paths.get(liteDir, BACKUP_DIR_PREFIX + START_TIME);
+    logger.info("Begin to merge {} to database, start {} end {}.", bakDir, start, end);
+    spec.commandLine().getOut()
+        .format("Begin to merge %s to database, start %d end %d.", bakDir, start, end).println();
+    byte[] head = ByteArray.fromLong(start);
+    // use seek to skip
+    archiveDbs.stream().parallel().forEach(dbName -> {
+      try {
+        DBInterface bakDb = DbTool.getDB(bakDir.toString(), dbName);
+        DBInterface destDb = DbTool.getDB(liteDir, dbName);
+        try (DBIterator iterator = bakDb.iterator()) {
+          if (TRANS_DB_NAME.equals(dbName) || TRANSACTION_HISTORY_DB_NAME.equals(dbName)) {
+            iterator.seekToFirst();
+          } else {
+            iterator.seek(head);
+          }
+          ProgressBar.wrap(iterator, dbName)
+              .forEachRemaining(e -> destDb.put(e.getKey(), e.getValue()));
+        }
+      } catch (IOException | RocksDBException e) {
+        throw new RuntimeException(e);
+      }
+    });
   }
 
   private byte[] getDataFromSourceDB(String sourceDir, String dbName, byte[] key)
@@ -582,6 +622,7 @@ public class DbLite implements Callable<Integer> {
 
   /**
    * return true if byte array is null or length is 0.
+   *
    * @param b bytes
    * @return true or false
    */
@@ -656,20 +697,25 @@ public class DbLite implements Callable<Integer> {
   }
 
   static class BlockNumInfo {
-    private final long snapshotBlkNum;
-    private final long historyBlkNum;
+    private final long snapshotMinNum;
+    private final long snapshotMaxNum;
+    private final long historyMaxNum;
 
-    public BlockNumInfo(long snapshotBlkNum, long historyBlkNum) {
-      this.snapshotBlkNum = snapshotBlkNum;
-      this.historyBlkNum = historyBlkNum;
+    public BlockNumInfo(long snapshotMinNum, long historyMaxNum, long snapshotMaxNum) {
+      this.snapshotMinNum = snapshotMinNum;
+      this.historyMaxNum = historyMaxNum;
+      this.snapshotMaxNum = snapshotMaxNum;
     }
 
-    public long getSnapshotBlkNum() {
-      return snapshotBlkNum;
+    public long getSnapshotMinNum() {
+      return snapshotMinNum;
     }
 
-    public long getHistoryBlkNum() {
-      return historyBlkNum;
+    public long getHistoryMaxNum() {
+      return historyMaxNum;
+    }
+    public long getSnapshotMaxNum() {
+      return snapshotMaxNum;
     }
   }
 }

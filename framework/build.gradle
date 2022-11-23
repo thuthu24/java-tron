@@ -260,13 +260,35 @@ startScripts.enabled = false
 run.enabled = false
 tasks.distTar.enabled = false
 
+createScript(project, 'org.tron.program.SolidityNode', 'SolidityNode')
 createScript(project, 'org.tron.program.FullNode', 'FullNode')
+createScript(project, 'org.tron.program.KeystoreFactory', 'KeystoreFactory')
+createScript(project, 'org.tron.program.DBConvert', 'DBConvert')
+createScript(project, 'org.tron.tool.litefullnode.LiteFullNodeTool', 'LiteFullNodeTool')
 
 def releaseBinary = hasProperty('binaryRelease') ? getProperty('binaryRelease') : 'true'
+def skipSolidity = hasProperty('skipSolidity') ? true : false
+def skipKeystore = hasProperty('skipKeystore') ? true : false
+def skipConvert = hasProperty('skipConvert') ? true : false
+def skipLite = hasProperty('skipLite') ? true : false
+def skipAll = hasProperty('skipAll') ? true : false
 if (releaseBinary == 'true') {
-    artifacts {
-        archives(binaryRelease('buildFullNodeJar', 'FullNode', 'org.tron.program.FullNode'))
+   binaryRelease('buildFullNodeJar', 'FullNode', 'org.tron.program.FullNode')
+    if (!skipAll) {
+        if (!skipSolidity) {
+            binaryRelease('buildSolidityNodeJar', 'SolidityNode', 'org.tron.program.SolidityNode')
+        }
+        if (!skipKeystore) {
+            binaryRelease('buildKeystoreFactoryJar', 'KeystoreFactory', 'org.tron.program.KeystoreFactory')
+        }
+        if (!skipConvert) {
+            binaryRelease('buildDBConvertJar', 'DBConvert', 'org.tron.program.DBConvert')
+        }
+        if (!skipLite) {
+            binaryRelease('buildLiteFullNodeToolJar', 'LiteFullNodeTool', 'org.tron.tool.litefullnode.LiteFullNodeTool')
+        }
     }
+
 }
 
 task copyToParent(type: Copy) {
