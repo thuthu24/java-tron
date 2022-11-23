@@ -15,12 +15,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import me.tongfei.progressbar.ProgressBar;
+import org.tron.plugins.utils.FileUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
+@Slf4j(topic = "move")
 @Command(name = "mv", aliases = "move",
-    description = "mv db to pre-set new path . For example HDD,reduce storage expenses.")
+    description = "Move db to pre-set new path . For example HDD,reduce storage expenses.")
 public class DbMove implements Callable<Integer> {
 
   private static final String PROPERTIES_CONFIG_KEY = "storage.properties";
@@ -129,7 +132,7 @@ public class DbMove implements Callable<Integer> {
             }
           });
       try {
-        if (deleteDir(p.original.toFile())) {
+        if (FileUtils.deleteDir(p.original.toFile())) {
           Files.createSymbolicLink(p.original, p.destination);
         }
       } catch (IOException | UnsupportedOperationException x) {
@@ -144,20 +147,6 @@ public class DbMove implements Callable<Integer> {
     spec.commandLine().getErr().println(NOT_FIND);
   }
 
-  /**
-   * delete directory.
-   */
-  public static boolean deleteDir(File dir) {
-    if (dir.isDirectory()) {
-      String[] children = dir.list();
-      if (children != null) {
-        for (String child : children) {
-          deleteDir(new File(dir, child));
-        }
-      }
-    }
-    return dir.delete();
-  }
 
   static class Property {
 
@@ -174,7 +163,7 @@ public class DbMove implements Callable<Integer> {
       if (this.original.toFile().isFile()) {
         throw new IOException(this.original + " is a file!");
       }
-      if (isSymbolicLink(original.toFile())) {
+      if (FileUtils.isSymbolicLink(original.toFile())) {
         throw new IOException(original + " is  symbolicLink!");
       }
       this.destination = destination.toFile().getCanonicalFile().toPath();
@@ -184,21 +173,6 @@ public class DbMove implements Callable<Integer> {
       if (this.destination.equals(this.original)) {
         throw new IOException("destination and original can not be same:[" + this.original + "]!");
       }
-    }
-
-    public boolean isSymbolicLink(File file) throws IOException {
-      if (file == null) {
-        throw new NullPointerException("File must not be null");
-      }
-
-      File canon;
-      if (file.getParent() == null) {
-        canon = file;
-      } else {
-        File canonDir = file.getParentFile().getCanonicalFile();
-        canon = new File(canonDir, file.getName());
-      }
-      return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
     }
   }
 
