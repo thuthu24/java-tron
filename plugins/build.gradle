@@ -134,15 +134,12 @@ def createScript(project, mainClass, name) {
 applicationDistribution.from("../gradle/java-tron.vmoptions") {
     into "bin"
 }
-createScript(project, 'org.tron.plugins.ArchiveManifest', 'ArchiveManifest')
 createScript(project, 'org.tron.plugins.Toolkit', 'Toolkit')
 
 def releaseBinary = hasProperty('binaryRelease') ? getProperty('binaryRelease') : 'true'
 if (releaseBinary == 'true') {
     artifacts {
-        archives(
-                binaryRelease('buildArchiveManifestJar', 'ArchiveManifest', 'org.tron.plugins.ArchiveManifest'),
-                binaryRelease('buildToolkitJar', 'Toolkit', 'org.tron.plugins.Toolkit'))
+        archives(binaryRelease('buildToolkitJar', 'Toolkit', 'org.tron.plugins.Toolkit'))
     }
 }
 
