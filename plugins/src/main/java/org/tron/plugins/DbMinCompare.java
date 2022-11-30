@@ -28,7 +28,7 @@ import picocli.CommandLine;
     exitCodeList = {
         "0:Successful",
         "n:compare diff find,please check toolkit.log"})
-public class DbCompare implements Callable<Integer> {
+public class DbMinCompare implements Callable<Integer> {
 
   @CommandLine.Spec
   CommandLine.Model.CommandSpec spec;
