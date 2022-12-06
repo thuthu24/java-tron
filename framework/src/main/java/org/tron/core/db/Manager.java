@@ -957,21 +957,6 @@ public class Manager {
     }
 
     updateFork(block);
-    if (System.currentTimeMillis() - block.getTimeStamp() >= 60_000) {
-      revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MAX_FLUSH_COUNT);
-      if (Args.getInstance().getShutdownBlockTime() != null
-          && Args.getInstance().getShutdownBlockTime().getNextValidTimeAfter(
-          new Date(block.getTimeStamp() - SnapshotManager.DEFAULT_MAX_FLUSH_COUNT * 1000 * 3))
-          .compareTo(new Date(block.getTimeStamp())) <= 0) {
-        revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MIN_FLUSH_COUNT);
-      }
-      if (latestSolidityNumShutDown > 0 && latestSolidityNumShutDown - block.getNum()
-          <= SnapshotManager.DEFAULT_MAX_FLUSH_COUNT) {
-        revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MIN_FLUSH_COUNT);
-      }
-    } else {
-      revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MIN_FLUSH_COUNT);
-    }
   }
 
   private void switchFork(BlockCapsule newHead)
