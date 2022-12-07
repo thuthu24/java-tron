@@ -6,6 +6,10 @@ public class TronException extends Exception {
     super();
     report();
   }
+  public TronException(Throwable cause) {
+    super(cause);
+    report();
+  }
 
   public TronException(String message) {
     super(message);

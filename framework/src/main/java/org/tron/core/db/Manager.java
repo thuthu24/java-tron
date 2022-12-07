@@ -8,6 +8,10 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Longs;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import io.prometheus.client.Histogram;
 import java.util.ArrayList;
@@ -25,14 +29,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -202,7 +205,7 @@ public class Manager {
   @Getter
   @Setter
   private MerkleContainer merkleContainer;
-  private ExecutorService validateSignService;
+  private ListeningExecutorService validateSignService;
   private boolean isRunRePushThread = true;
   private boolean isRunTriggerCapsuleProcessThread = true;
   private BlockingQueue<TransactionCapsule> pushTransactionQueue = new LinkedBlockingQueue<>();
@@ -511,8 +514,8 @@ public class Manager {
     int nodeType = chainBaseManager.getCommonStore().getNodeType();
     logger.info("Node type is: {}.", Constant.NODE_TYPE_LIGHT_NODE == nodeType ? "lite" : "full");
     revokingStore.enable();
-    validateSignService = Executors
-        .newFixedThreadPool(Args.getInstance().getValidateSignThreadNum());
+    validateSignService = MoreExecutors.listeningDecorator(Executors
+        .newFixedThreadPool(Args.getInstance().getValidateSignThreadNum()));
     Thread rePushThread = new Thread(rePushLoop);
     rePushThread.setDaemon(true);
     rePushThread.start();
@@ -1859,29 +1862,22 @@ public class Manager {
 
   private void preValidateTransactionSign(List<TransactionCapsule> txs)
       throws InterruptedException, ValidateSignatureException {
-    int transSize = txs.size();
-    if (transSize <= 0) {
+    if (txs.isEmpty()) {
       return;
     }
     Histogram.Timer requestTimer = Metrics.histogramStartTimer(
         MetricKeys.Histogram.VERIFY_SIGN_LATENCY, MetricLabels.TRX);
     try {
-      CountDownLatch countDownLatch = new CountDownLatch(transSize);
-      List<Future<Boolean>> futures = new ArrayList<>(transSize);
-
-      for (TransactionCapsule transaction : txs) {
-        Future<Boolean> future = validateSignService
-            .submit(new ValidateSignTask(transaction, countDownLatch, chainBaseManager));
-        futures.add(future);
-      }
-      countDownLatch.await();
-
-      for (Future<Boolean> future : futures) {
-        try {
-          future.get();
-        } catch (ExecutionException e) {
-          throw new ValidateSignatureException(e.getCause().getMessage());
-        }
+      List<ListenableFuture<?>> futures = txs.stream().map(tx ->
+        validateSignService.submit(new ValidateSignTask(tx, chainBaseManager))
+      ).collect(Collectors.toList());
+      Future<?> future = Futures.allAsList(futures);
+      try {
+        future.get(2L * futures.size(), TimeUnit.MILLISECONDS);
+      } catch (ExecutionException e) {
+        throw new ValidateSignatureException(e.getCause().getMessage());
+      } catch (TimeoutException e) {
+        throw new ValidateSignatureException(e);
       }
     } finally {
       Metrics.histogramObserve(requestTimer);
@@ -2341,26 +2337,16 @@ public class Manager {
   private static class ValidateSignTask implements Callable<Boolean> {
 
     private TransactionCapsule trx;
-    private CountDownLatch countDownLatch;
     private ChainBaseManager manager;
 
-    ValidateSignTask(TransactionCapsule trx, CountDownLatch countDownLatch,
-        ChainBaseManager manager) {
+    ValidateSignTask(TransactionCapsule trx, ChainBaseManager manager) {
       this.trx = trx;
-      this.countDownLatch = countDownLatch;
       this.manager = manager;
     }
 
     @Override
     public Boolean call() throws ValidateSignatureException {
-      try {
-        trx.validateSignature(manager.getAccountStore(), manager.getDynamicPropertiesStore());
-      } catch (ValidateSignatureException e) {
-        throw e;
-      } finally {
-        countDownLatch.countDown();
-      }
-      return true;
+      return trx.validateSignature(manager.getAccountStore(), manager.getDynamicPropertiesStore());
     }
   }
 }

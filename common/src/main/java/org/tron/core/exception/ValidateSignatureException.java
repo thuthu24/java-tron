@@ -10,6 +10,10 @@ public class ValidateSignatureException extends TronException {
     super();
   }
 
+  public ValidateSignatureException(Throwable cause) {
+    super(cause);
+  }
+
   public ValidateSignatureException(String message) {
     super(message);
   }
