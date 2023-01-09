@@ -1,10 +1,6 @@
 package org.tron.program;
 
-import com.google.protobuf.ByteString;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import java.io.File;
-import java.math.BigInteger;
 import java.nio.file.Paths;
 import org.junit.After;
 import org.junit.Before;
@@ -13,8 +9,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.tron.api.GrpcAPI;
-import org.tron.api.WalletGrpc;
 import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
 import org.tron.common.application.TronApplicationContext;
@@ -26,19 +20,14 @@ import org.tron.common.utils.Utils;
 import org.tron.core.Wallet;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
-import org.tron.core.services.RpcApiService;
-import org.tron.core.services.interfaceOnSolidity.RpcApiServiceOnSolidity;
-import org.tron.protos.Protocol;
-import org.tron.protos.contract.BalanceContract;
 import org.tron.tool.litefullnode.LiteFullNodeTool;
-import stest.tron.wallet.common.client.utils.TransactionUtils;
 
 public class LiteFullNodeToolTest {
 
   private static final Logger logger = LoggerFactory.getLogger("Test");
 
   private TronApplicationContext context;
-  private WalletGrpc.WalletBlockingStub blockingStubFull = null;
+  private Wallet wallet = null;
   private Application appTest;
 
   private String databaseDir;
@@ -55,18 +44,9 @@ public class LiteFullNodeToolTest {
   public void startApp() {
     context = new TronApplicationContext(DefaultConfig.class);
     appTest = ApplicationFactory.create(context);
-    appTest.addService(context.getBean(RpcApiService.class));
-    appTest.addService(context.getBean(RpcApiServiceOnSolidity.class));
-    appTest.initServices(Args.getInstance());
-    appTest.startServices();
     appTest.startup();
+    wallet = context.getBean(Wallet.class);
 
-    String fullnode = String.format("%s:%d", "127.0.0.1",
-            Args.getInstance().getRpcPort());
-    ManagedChannel channelFull = ManagedChannelBuilder.forTarget(fullnode)
-            .usePlaintext(true)
-            .build();
-    blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
   }
 
   /**
@@ -199,7 +179,7 @@ public class LiteFullNodeToolTest {
       String sunPri = "cba92a516ea09f620a16ff7ee95ce0df1d56550a8babe9964981a7144c8a784a";
       byte[] sunAddress = PublicMethod.getFinalAddress(sunPri);
       PublicMethod.sendcoin(address, 1L,
-              sunAddress, sunPri, blockingStubFull);
+              sunAddress, sunPri, wallet);
       try {
         Thread.sleep(sleepOnce);
       } catch (InterruptedException e) {

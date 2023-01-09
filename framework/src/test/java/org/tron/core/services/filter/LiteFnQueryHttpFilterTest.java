@@ -40,7 +40,7 @@ public class LiteFnQueryHttpFilterTest {
   private Application appTest;
   private CloseableHttpClient httpClient = HttpClients.createDefault();
 
-  private String dbPath = "output_grpc_filter_test";
+  private String dbPath = "output_http_filter_test";
 
   /**
    * init dependencies.
