@@ -1622,7 +1622,12 @@ public class Manager {
     accountStateCallBack.executeGenerateFinish();
 
     session.reset();
-
+    // check currentSize == blockCapsule.getSerializedSize()
+    if (currentSize != blockCapsule.getSerializedSize()) {
+      throw new IllegalStateException(String.format("%s, expect: %d, actual: %d",
+              blockCapsule.getBlockId(), blockCapsule.getSerializedSize(), currentSize));
+    }
+    //
     blockCapsule.setMerkleRoot();
     blockCapsule.sign(miner.getPrivateKey());
 

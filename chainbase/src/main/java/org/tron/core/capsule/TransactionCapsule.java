@@ -678,6 +678,12 @@ public class TransactionCapsule implements ProtoCapsule<Transaction> {
     if (this.id == null) {
       this.id = getRawHash();
     }
+    // check id == getRawHash()
+    if (!getRawHash().equals(this.id)) {
+      throw new IllegalStateException(String.format("expect: %s, actual: %s",
+              getRawHash(), this.id));
+    }
+    //
     return this.id;
   }
 
