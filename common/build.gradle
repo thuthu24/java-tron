@@ -9,26 +9,10 @@ sourceCompatibility = 1.8
 // Dependency versions
 // ---------------------------------------
 
-def leveldbVersion = "1.8"
+def leveldbGroup = "com.halibobor"
+def leveldbName = "leveldbjni-all"
+def leveldbVersion = "1.18.3"
 // --------------------------------------
-
-static def isWindows() {
-    return org.gradle.internal.os.OperatingSystem.current().isWindows()
-}
-
-if (isWindows()) {
-    ext {
-        leveldbGroup = "org.ethereum"
-        leveldbName = "leveldbjni-all"
-        leveldbVersion = "1.18.3"
-    }
-} else {
-    ext {
-        leveldbGroup = "org.fusesource.leveldbjni"
-        leveldbName = "leveldbjni-all"
-        leveldbVersion = "1.8"
-    }
-}
 
 repositories {
     mavenCentral()

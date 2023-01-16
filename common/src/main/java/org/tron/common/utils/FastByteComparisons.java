@@ -1,44 +1,42 @@
-/*
- * Copyright (c) [2016] [ <ether.camp> ]
- * This file is part of the ethereumJ library.
- *
- * The ethereumJ library is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * The ethereumJ library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with the ethereumJ library. If not, see <http://www.gnu.org/licenses/>.
- */
 /**
- * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
- * agreements.  See the NOTICE file distributed with this work for additional information regarding
- * copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with the License.  You may obtain
- * a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.tron.common.utils;
 
+import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedBytes;
+import java.lang.reflect.Field;
+import java.nio.ByteOrder;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import lombok.extern.slf4j.Slf4j;
+import sun.misc.Unsafe;
+
+
+
+
 
 /**
- * Utility code to do optimized byte-array comparison. This is borrowed and slightly modified from
- * Guava's {@link UnsignedBytes} class to be able to compare arrays that start at non-zero offsets.
+ * Utility code to do optimized byte-array comparison.
+ * This is borrowed and slightly modified from Guava's {@link UnsignedBytes}
+ * class to be able to compare arrays that start at non-zero offsets.
  */
-@SuppressWarnings("restriction")
+@Slf4j(topic = "utils")
 public abstract class FastByteComparisons {
 
   public static boolean isEqual(byte[] b1, byte[] b2) {
@@ -74,8 +72,11 @@ public abstract class FastByteComparisons {
   }
 
   /**
-   * <p>Uses reflection to gracefully fall back to the Java implementation if {@code Unsafe} isn't
-   * available.
+   * Provides a lexicographical comparer implementation; either a Java
+   * implementation or a faster implementation based on {@link Unsafe}.
+   *
+   * <p>Uses reflection to gracefully fall back to the Java implementation if
+   * {@code Unsafe} isn't available.
    */
   private static class LexicographicalComparerHolder {
 
@@ -86,10 +87,17 @@ public abstract class FastByteComparisons {
     private static final Comparer<byte[]> BEST_COMPARER = getBestComparer();
 
     /**
-     * Returns the Unsafe-using Comparer, or falls back to the pure-Java implementation if unable to
-     * do so.
+     * Returns the Unsafe-using Comparer, or falls back to the pure-Java
+     * implementation if unable to do so.
      */
     static Comparer<byte[]> getBestComparer() {
+      if (System.getProperty("os.arch").toLowerCase().startsWith("sparc")) {
+        if (logger.isTraceEnabled()) {
+          logger.trace("Lexicographical comparer selected for "
+                  + "byte aligned system architecture");
+        }
+        return lexicographicalComparerJavaImpl();
+      }
       try {
         Class<?> theClass = Class.forName(UNSAFE_COMPARER_NAME);
 
@@ -97,8 +105,16 @@ public abstract class FastByteComparisons {
         @SuppressWarnings("unchecked")
         Comparer<byte[]> comparer =
             (Comparer<byte[]>) theClass.getEnumConstants()[0];
+        if (logger.isTraceEnabled()) {
+          logger.trace("Unsafe comparer selected for "
+                  + "byte unaligned system architecture");
+        }
         return comparer;
       } catch (Throwable t) { // ensure we really catch *everything*
+        if (logger.isTraceEnabled()) {
+          logger.trace(t.getMessage());
+          logger.trace("Lexicographical comparer selected");
+        }
         return lexicographicalComparerJavaImpl();
       }
     }
@@ -115,6 +131,7 @@ public abstract class FastByteComparisons {
             length1 == length2) {
           return 0;
         }
+        // Bring WritableComparator code local
         int end1 = offset1 + length1;
         int end2 = offset2 + length2;
         for (int i = offset1, j = offset2; i < end1 && j < end2; i++,
@@ -129,6 +146,109 @@ public abstract class FastByteComparisons {
       }
     }
 
+    @SuppressWarnings("unused") // used via reflection
+    private enum UnsafeComparer implements Comparer<byte[]> {
+      INSTANCE;
 
+      static final Unsafe theUnsafe;
+
+      /** The offset to the first element in a byte array. */
+      static final int BYTE_ARRAY_BASE_OFFSET;
+
+      static {
+        theUnsafe = (Unsafe) AccessController.doPrivileged(
+                (PrivilegedAction<Object>) () -> {
+                  try {
+                    Field f = Unsafe.class.getDeclaredField("theUnsafe");
+                    f.setAccessible(true);
+                    return f.get(null);
+                  } catch (NoSuchFieldException | IllegalAccessException e) {
+                    // It doesn't matter what we throw;
+                    // it's swallowed in getBestComparer().
+                    throw new Error();
+                  }
+                });
+
+        BYTE_ARRAY_BASE_OFFSET = theUnsafe.arrayBaseOffset(byte[].class);
+
+        // sanity check - this should never fail
+        if (theUnsafe.arrayIndexScale(byte[].class) != 1) {
+          throw new AssertionError();
+        }
+      }
+
+      static final boolean littleEndian = ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN);
+
+      /**
+       * Returns true if x1 is less than x2, when both values are treated as
+       * unsigned.
+       */
+      static boolean lessThanUnsigned(long x1, long x2) {
+        return (x1 + Long.MIN_VALUE) < (x2 + Long.MIN_VALUE);
+      }
+
+      /**
+       * Lexicographically compare two arrays.
+       *
+       * @param buffer1 left operand
+       * @param buffer2 right operand
+       * @param offset1 Where to start comparing in the left buffer
+       * @param offset2 Where to start comparing in the right buffer
+       * @param length1 How much to compare from the left buffer
+       * @param length2 How much to compare from the right buffer
+       * @return 0 if equal, < 0 if left is less than right, etc.
+       */
+      @Override
+      public int compareTo(
+              byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2, int length2) {
+        // Short circuit equal case
+        if (buffer1 == buffer2 && offset1 == offset2 && length1 == length2) {
+          return 0;
+        }
+        final int stride = Longs.BYTES;
+        int minLength = Math.min(length1, length2);
+        int strideLimit = minLength & ~(stride - 1);
+        int offset1Adj = offset1 + BYTE_ARRAY_BASE_OFFSET;
+        int offset2Adj = offset2 + BYTE_ARRAY_BASE_OFFSET;
+        int i;
+
+        /*
+         * Compare 8 bytes at a time. Benchmarking shows comparing 8 bytes at a
+         * time is no slower than comparing 4 bytes at a time even on 32-bit.
+         * On the other hand, it is substantially faster on 64-bit.
+         */
+        for (i = 0; i < strideLimit; i += stride) {
+          long lw = theUnsafe.getLong(buffer1, offset1Adj + (long) i);
+          long rw = theUnsafe.getLong(buffer2, offset2Adj + (long) i);
+
+          if (lw != rw) {
+            if (!littleEndian) {
+              return lessThanUnsigned(lw, rw) ? -1 : 1;
+            }
+
+            /*
+             * We want to compare only the first index where left[index] !=
+             * right[index]. This corresponds to the least significant nonzero
+             * byte in lw ^ rw, since lw and rw are little-endian.
+             * Long.numberOfTrailingZeros(diff) tells us the least significant
+             * nonzero bit, and zeroing out the first three bits of L.nTZ gives
+             * us the shift to get that least significant nonzero byte. This
+             * comparison logic is based on UnsignedBytes from Guava v21
+             */
+            int n = Long.numberOfTrailingZeros(lw ^ rw) & ~0x7;
+            return ((int) ((lw >>> n) & 0xFF)) - ((int) ((rw >>> n) & 0xFF));
+          }
+        }
+
+        // The epilogue to cover the last (minLength % 8) elements.
+        for (; i < minLength; i++) {
+          int result = UnsignedBytes.compare(buffer1[offset1 + i], buffer2[offset2 + i]);
+          if (result != 0) {
+            return result;
+          }
+        }
+        return length1 - length2;
+      }
+    }
   }
 }
