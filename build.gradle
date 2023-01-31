@@ -73,7 +73,7 @@ subprojects {
             }
             // TODO if update grpc remove
             if(details.requested.group == 'io.netty') {
-                details.useVersion "4.1.27.Final"
+                details.useVersion "4.1.79.Final"
             }
         }
     }

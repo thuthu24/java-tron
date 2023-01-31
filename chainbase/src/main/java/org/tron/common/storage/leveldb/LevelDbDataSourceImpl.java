@@ -18,7 +18,7 @@ package org.tron.common.storage.leveldb;
 import static org.fusesource.leveldbjni.JniDBFactory.factory;
 
 import com.google.common.collect.Sets;
-import java.io.File;
+import com.google.common.primitives.Bytes;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,18 +30,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import com.google.common.primitives.Bytes;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.iq80.leveldb.CompressionType;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.Logger;
@@ -143,6 +139,7 @@ public class LevelDbDataSourceImpl extends DbStat implements DbSourceInter<byte[
       Files.createDirectories(dbPath.getParent());
     }
     try {
+      dbOptions.bitsPerKey(10);
       database = factory.open(dbPath.toFile(), dbOptions);
       if (!this.getDBName().startsWith("checkpoint")) {
         logger.info("DB {} open success with writeBufferSize {} M, cacheSize {} M, maxOpenFiles {}.",
