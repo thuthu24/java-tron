@@ -57,7 +57,7 @@ public class ApplicationImpl implements Application {
    * start up the app.
    */
   public void startup() {
-    if (!Args.getInstance().isSolidityNode()) {
+    if (!Args.getInstance().isSolidityNode() && !Args.getInstance().isDisableNet()) {
       tronNetService.start();
     }
     consensusService.start();

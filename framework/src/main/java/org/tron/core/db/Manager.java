@@ -507,7 +507,7 @@ public class Manager {
     chainBaseManager.getDynamicPropertiesStore().updateDynamicStoreByConfig();
 
     // init liteFullNode
-    initLiteNode();
+    //initLiteNode();
 
     long headNum = chainBaseManager.getDynamicPropertiesStore().getLatestBlockHeaderNumber();
     logger.info("Current headNum is: {}.", headNum);
@@ -543,7 +543,9 @@ public class Manager {
     TransactionRegister.registerActuator();
     // init auto-stop
     try {
-      initAutoStop();
+      if (!Args.getInstance().isDisableNet()) {
+        initAutoStop();
+      }
     } catch (IllegalArgumentException e) {
       logger.error("Auto-stop params error: {}", e.getMessage());
       System.exit(1);
