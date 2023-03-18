@@ -2372,6 +2372,9 @@ public class Manager {
   }
 
   private void initLiteNode() {
+    if (Args.getInstance().isP2pDisable()) {
+      return;
+    }
     // When using bloom filter for transaction de-duplication,
     // it is possible to use trans for secondary confirmation.
     // Init trans db for liteNode if needed.
