@@ -111,6 +111,9 @@ public class TxCacheDB implements DB<byte[], byte[]>, Flusher {
   }
 
   private void init() {
+    if (CommonParameter.getInstance().isP2pDisable()) {
+      return;
+    }
     long size = recentTransactionStore.size();
     if (size != MAX_BLOCK_SIZE) {
       // 0. load from persistentStore
