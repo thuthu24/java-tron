@@ -1417,23 +1417,26 @@ public class Manager {
       chainBaseManager.getBalanceTraceStore().initCurrentTransactionBalanceTrace(trxCap);
     }
 
-    validateTapos(trxCap);
-    validateCommon(trxCap);
+    if (Objects.isNull(blockCap) || !blockCap.generatedByMyself) {
+      validateTapos(trxCap);
+      validateCommon(trxCap);
 
-    if (trxCap.getInstance().getRawData().getContractList().size() != 1) {
-      throw new ContractSizeNotEqualToOneException(
-          String.format(
-              "tx %s contract size should be exactly 1, this is extend feature ,actual :%d",
-          txId, trxCap.getInstance().getRawData().getContractList().size()));
+      if (trxCap.getInstance().getRawData().getContractList().size() != 1) {
+        throw new ContractSizeNotEqualToOneException(
+           String.format(
+               "tx %s contract size should be exactly 1, this is extend feature ,actual :%d",
+                   txId, trxCap.getInstance().getRawData().getContractList().size()));
+      }
+
+      validateDup(trxCap);
+
+      if (!trxCap.validateSignature(chainBaseManager.getAccountStore(),
+              chainBaseManager.getDynamicPropertiesStore())) {
+        throw new ValidateSignatureException(
+                String.format(" %s transaction signature validate failed", txId));
+      }
     }
 
-    validateDup(trxCap);
-
-    if (!trxCap.validateSignature(chainBaseManager.getAccountStore(),
-        chainBaseManager.getDynamicPropertiesStore())) {
-      throw new ValidateSignatureException(
-          String.format(" %s transaction signature validate failed", txId));
-    }
 
     TransactionTrace trace = new TransactionTrace(trxCap, StoreFactory.getInstance(),
         new RuntimeImpl());
