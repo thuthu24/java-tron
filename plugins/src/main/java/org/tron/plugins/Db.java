@@ -12,6 +12,14 @@ import picocli.CommandLine;
         DbConvert.class,
         DbLite.class,
         DbCopy.class,
+        DbDebug.class,
+        DbMinCompare.class,
+        DbQueryProperties.class,
+        DbCompact.class,
+        DbAccountScan.class,
+        DbBlockScan.class,
+        DbAccountParser.class,
+        DbTrim.class,
         DbRoot.class
     },
     commandListHeading = "%nCommands:%n%nThe most commonly used db commands are:%n"
