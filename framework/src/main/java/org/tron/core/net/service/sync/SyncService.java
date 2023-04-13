@@ -18,6 +18,9 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.MetricLabels;
+import org.tron.common.prometheus.Metrics;
 import org.tron.common.utils.Pair;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.capsule.BlockCapsule.BlockId;
@@ -242,8 +245,12 @@ public class SyncService {
   private synchronized void handleSyncBlock() {
 
     synchronized (blockJustReceived) {
+      Metrics.gaugeSet(MetricKeys.Gauge.SYNC_BLOCK_QUEUE,
+              blockJustReceived.size(), MetricLabels.Gauge.SYNC_JUST_RECEIVED);
       blockWaitToProcess.putAll(blockJustReceived);
       blockJustReceived.clear();
+      Metrics.gaugeSet(MetricKeys.Gauge.SYNC_BLOCK_QUEUE,
+              blockWaitToProcess.size(), MetricLabels.Gauge.SYNC_IN_PROCESS);
     }
 
     final boolean[] isProcessed = {true};
@@ -271,6 +278,8 @@ public class SyncService {
             blockWaitToProcess.remove(msg);
             isProcessed[0] = true;
             processSyncBlock(msg.getBlockCapsule());
+          } else {
+            Metrics.counterInc(MetricKeys.Counter.SYNC_BLOCK_REMOVE_FAIL, 1);
           }
         }
       });

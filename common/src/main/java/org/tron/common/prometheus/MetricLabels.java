@@ -57,6 +57,10 @@ public class MetricLabels {
 
     public static final String PEERS_VALID = "valid";
 
+    public static final String SYNC_IN_PROCESS = "in_process";
+
+    public static final String SYNC_JUST_RECEIVED = "just_received";
+
     private Gauge() {
       throw new IllegalStateException("Gauge");
     }
