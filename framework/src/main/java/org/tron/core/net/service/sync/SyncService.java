@@ -4,13 +4,14 @@ import static org.tron.core.config.Parameter.NetConstants.MAX_BLOCK_FETCH_PER_PE
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.TreeMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -48,9 +49,11 @@ public class SyncService {
   @Autowired
   private PbftDataSyncHandler pbftDataSyncHandler;
 
-  private Map<BlockMessage, PeerConnection> blockWaitToProcess = new ConcurrentHashMap<>();
+  private final Map<BlockMessage, PeerConnection> blockWaitToProcess =
+          Collections.synchronizedSortedMap(new TreeMap<>());
 
-  private Map<BlockMessage, PeerConnection> blockJustReceived = new ConcurrentHashMap<>();
+  private final Map<BlockMessage, PeerConnection> blockJustReceived =
+          Collections.synchronizedSortedMap(new TreeMap<>());
 
   private long blockCacheTimeout = Args.getInstance().getBlockCacheTimeout();
   private Cache<BlockId, PeerConnection> requestBlockIds = CacheBuilder.newBuilder()
@@ -248,9 +251,9 @@ public class SyncService {
       Metrics.gaugeSet(MetricKeys.Gauge.SYNC_BLOCK_QUEUE,
               blockJustReceived.size(), MetricLabels.Gauge.SYNC_JUST_RECEIVED);
       blockWaitToProcess.putAll(blockJustReceived);
+      Metrics.gaugeInc(MetricKeys.Gauge.SYNC_BLOCK_QUEUE, blockJustReceived.size(),
+              MetricLabels.Gauge.SYNC_IN_PROCESS);
       blockJustReceived.clear();
-      Metrics.gaugeSet(MetricKeys.Gauge.SYNC_BLOCK_QUEUE,
-              blockWaitToProcess.size(), MetricLabels.Gauge.SYNC_IN_PROCESS);
     }
 
     final boolean[] isProcessed = {true};
@@ -258,13 +261,16 @@ public class SyncService {
     while (isProcessed[0]) {
 
       isProcessed[0] = false;
-
-      blockWaitToProcess.forEach((msg, peerConnection) -> {
-        synchronized (tronNetDelegate.getBlockLock()) {
+      synchronized (tronNetDelegate.getBlockLock()) {
+        blockWaitToProcess.entrySet().removeIf((entry) -> {
+          PeerConnection peerConnection = entry.getValue();
+          BlockMessage msg = entry.getKey();
           if (peerConnection.isDisconnect()) {
-            blockWaitToProcess.remove(msg);
+            //blockWaitToProcess.remove(msg);
+            Metrics.gaugeInc(MetricKeys.Gauge.SYNC_BLOCK_QUEUE, -1,
+                    MetricLabels.Gauge.SYNC_IN_PROCESS);
             invalid(msg.getBlockId(), peerConnection);
-            return;
+            return true;
           }
           final boolean[] isFound = {false};
           tronNetDelegate.getActivePeer().stream()
@@ -275,14 +281,18 @@ public class SyncService {
                 isFound[0] = true;
               });
           if (isFound[0]) {
-            blockWaitToProcess.remove(msg);
+            //blockWaitToProcess.remove(msg);
+            Metrics.gaugeInc(MetricKeys.Gauge.SYNC_BLOCK_QUEUE, -1,
+                    MetricLabels.Gauge.SYNC_IN_PROCESS);
             isProcessed[0] = true;
             processSyncBlock(msg.getBlockCapsule());
+            return true;
           } else {
             Metrics.counterInc(MetricKeys.Counter.SYNC_BLOCK_REMOVE_FAIL, 1);
+            return false;
           }
-        }
-      });
+        });
+      }
     }
   }
 

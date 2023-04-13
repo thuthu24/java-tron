@@ -1,5 +1,6 @@
 package org.tron.core.net.message.adv;
 
+import org.jetbrains.annotations.NotNull;
 import org.tron.common.overlay.message.Message;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.core.capsule.BlockCapsule;
@@ -8,7 +9,7 @@ import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.net.message.MessageTypes;
 import org.tron.core.net.message.TronMessage;
 
-public class BlockMessage extends TronMessage {
+public class BlockMessage extends TronMessage implements Comparable<BlockMessage>{
 
   private BlockCapsule block;
 
@@ -60,5 +61,10 @@ public class BlockMessage extends TronMessage {
   public String toString() {
     return new StringBuilder().append(super.toString()).append(block.getBlockId().getString())
         .append(", trx size: ").append(block.getTransactions().size()).append("\n").toString();
+  }
+
+  @Override
+  public int compareTo(@NotNull BlockMessage o) {
+    return Long.compare(this.getBlockId().getNum(), o.getBlockId().getNum());
   }
 }
