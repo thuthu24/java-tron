@@ -11,10 +11,12 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,11 +51,9 @@ public class SyncService {
   @Autowired
   private PbftDataSyncHandler pbftDataSyncHandler;
 
-  private final Map<BlockMessage, PeerConnection> blockWaitToProcess =
-          Collections.synchronizedSortedMap(new TreeMap<>());
+  private final Map<BlockMessage, PeerConnection> blockWaitToProcess = new ConcurrentHashMap<>();
 
-  private final Map<BlockMessage, PeerConnection> blockJustReceived =
-          Collections.synchronizedSortedMap(new TreeMap<>());
+  private final Map<BlockMessage, PeerConnection> blockJustReceived = new ConcurrentHashMap<>();
 
   private long blockCacheTimeout = Args.getInstance().getBlockCacheTimeout();
   private Cache<BlockId, PeerConnection> requestBlockIds = CacheBuilder.newBuilder()
@@ -256,21 +256,29 @@ public class SyncService {
       blockJustReceived.clear();
     }
 
+    long headNum = tronNetDelegate.getHeadBlockId().getNum();
+    AtomicLong lowCount = new AtomicLong();
+    blockWaitToProcess.forEach((blockMsg, peerConnection) -> {
+      if (blockMsg.getBlockId().getNum() < headNum) {
+        lowCount.getAndIncrement();
+      }
+    });
+    logger.info("Start handle sync block, blockWaitToProcess: {}, lowCount: {}",
+        blockWaitToProcess.size(), lowCount.longValue());
+
     final boolean[] isProcessed = {true};
 
     while (isProcessed[0]) {
 
       isProcessed[0] = false;
-      synchronized (tronNetDelegate.getBlockLock()) {
-        blockWaitToProcess.entrySet().removeIf((entry) -> {
-          PeerConnection peerConnection = entry.getValue();
-          BlockMessage msg = entry.getKey();
+      blockWaitToProcess.forEach((msg, peerConnection) -> {
+        synchronized (tronNetDelegate.getBlockLock()) {
           if (peerConnection.isDisconnect()) {
-            //blockWaitToProcess.remove(msg);
+            blockWaitToProcess.remove(msg);
             Metrics.gaugeInc(MetricKeys.Gauge.SYNC_BLOCK_QUEUE, -1,
                     MetricLabels.Gauge.SYNC_IN_PROCESS);
             invalid(msg.getBlockId(), peerConnection);
-            return true;
+            return;
           }
           final boolean[] isFound = {false};
           tronNetDelegate.getActivePeer().stream()
@@ -281,18 +289,18 @@ public class SyncService {
                 isFound[0] = true;
               });
           if (isFound[0]) {
-            //blockWaitToProcess.remove(msg);
+            logger.info("Before remove, blockWaitToProcess: {}", blockWaitToProcess.size());
+            blockWaitToProcess.remove(msg);
+            logger.info("After remove, blockWaitToProcess: {}", blockWaitToProcess.size());
             Metrics.gaugeInc(MetricKeys.Gauge.SYNC_BLOCK_QUEUE, -1,
                     MetricLabels.Gauge.SYNC_IN_PROCESS);
             isProcessed[0] = true;
             processSyncBlock(msg.getBlockCapsule());
-            return true;
           } else {
             Metrics.counterInc(MetricKeys.Counter.SYNC_BLOCK_REMOVE_FAIL, 1);
-            return false;
           }
-        });
-      }
+        }
+      });
     }
   }
 
