@@ -250,7 +250,10 @@ public class SyncService {
     synchronized (blockJustReceived) {
       Metrics.gaugeSet(MetricKeys.Gauge.SYNC_BLOCK_QUEUE,
               blockJustReceived.size(), MetricLabels.Gauge.SYNC_JUST_RECEIVED);
-      blockWaitToProcess.putAll(blockJustReceived);
+      long headNum = tronNetDelegate.getHeadBlockId().getNum();
+      blockJustReceived.entrySet().stream().filter(e ->
+        e.getKey().getBlockId().getNum() > headNum
+      ).forEach(en -> blockWaitToProcess.put(en.getKey(), en.getValue()));
       Metrics.gaugeInc(MetricKeys.Gauge.SYNC_BLOCK_QUEUE, blockJustReceived.size(),
               MetricLabels.Gauge.SYNC_IN_PROCESS);
       blockJustReceived.clear();
