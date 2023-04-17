@@ -254,7 +254,7 @@ public class SyncService {
       blockJustReceived.entrySet().stream().filter(e ->
         e.getKey().getBlockId().getNum() > headNum
       ).forEach(en -> blockWaitToProcess.put(en.getKey(), en.getValue()));
-      Metrics.gaugeInc(MetricKeys.Gauge.SYNC_BLOCK_QUEUE, blockJustReceived.size(),
+      Metrics.gaugeSet(MetricKeys.Gauge.SYNC_BLOCK_QUEUE, blockWaitToProcess.size(),
               MetricLabels.Gauge.SYNC_IN_PROCESS);
       blockJustReceived.clear();
     }
