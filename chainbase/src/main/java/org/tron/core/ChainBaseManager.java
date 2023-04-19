@@ -5,8 +5,9 @@ import static org.tron.core.config.Parameter.ChainConstant.BLOCK_PRODUCED_INTERV
 import com.google.common.cache.CacheLoader;
 import com.google.protobuf.ByteString;
 import java.util.List;
-import javax.annotation.PostConstruct;
 import java.util.concurrent.ExecutionException;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -275,7 +276,9 @@ public class ChainBaseManager {
     }
   }
 
-  public void closeAllStore() {
+  @PreDestroy
+  private void closeAllStore() {
+    logger.info("******** Begin to close db. ********");
     dbStatService.shutdown();
     closeOneStore(transactionRetStore);
     closeOneStore(recentBlockStore);
@@ -310,6 +313,7 @@ public class ChainBaseManager {
     closeOneStore(pbftSignDataStore);
     closeOneStore(sectionBloomStore);
     closeOneStore(accountAssetStore);
+    logger.info("******** End to close db. ********");
   }
 
   // for test only

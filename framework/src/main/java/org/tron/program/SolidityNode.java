@@ -70,7 +70,8 @@ public class SolidityNode {
     }
     parameter.setSolidityNode(true);
 
-    ApplicationContext context = new TronApplicationContext(DefaultConfig.class);
+    TronApplicationContext context = new TronApplicationContext(DefaultConfig.class);
+    context.registerShutdownHook();
 
     if (parameter.isHelp()) {
       logger.info("Here is the help message.");
@@ -80,7 +81,6 @@ public class SolidityNode {
     Metrics.init();
 
     Application appT = ApplicationFactory.create(context);
-    FullNode.shutdown(appT);
 
     RpcApiService rpcApiService = context.getBean(RpcApiService.class);
     appT.addService(rpcApiService);

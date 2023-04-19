@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -114,17 +115,6 @@ public class SnapshotManager implements RevokingDatabase {
     });
     exitThread.setName("exit-thread");
     exitThread.start();
-  }
-
-  @PreDestroy
-  public void close() {
-    try {
-      exitThread.interrupt();
-      // help GC
-      exitThread = null;
-    } catch (Exception e) {
-      logger.warn("exitThread interrupt error", e);
-    }
   }
 
   public static String simpleDecode(byte[] bytes) {
@@ -281,14 +271,27 @@ public class SnapshotManager implements RevokingDatabase {
   }
 
   @Override
+  @PreDestroy
   public void shutdown() {
+    logger.info("******** start to closeRevokingStore ********");
     logger.info("******** Begin to pop revokingDb. ********");
     logger.info("******** Before revokingDb size: {}.", size);
     checkTmpStore.close();
     logger.info("******** End to pop revokingDb. ********");
+    logger.info("******** end to closeRevokingStore ********");
     if (pruneCheckpointThread != null) {
       pruneCheckpointThread.shutdown();
     }
+    try {
+      exitThread.interrupt();
+      // help GC
+      exitThread = null;
+    } catch (Exception e) {
+      logger.warn("exitThread interrupt error", e);
+    }
+    logger.info("******** start to shutdown flush services ********");
+    flushServices.values().forEach(ExecutorService::shutdown);
+    logger.info("******** end to shutdown flush services ********");
   }
 
   public void updateSolidity(int hops) {

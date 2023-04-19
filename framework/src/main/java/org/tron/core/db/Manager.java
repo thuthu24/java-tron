@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -103,7 +104,6 @@ import org.tron.core.db.api.EnergyPriceHistoryLoader;
 import org.tron.core.db.api.MoveAbiHelper;
 import org.tron.core.db2.ISession;
 import org.tron.core.db2.core.Chainbase;
-import org.tron.core.db2.core.ITronChainBase;
 import org.tron.core.db2.core.SnapshotManager;
 import org.tron.core.exception.AccountResourceInsufficientException;
 import org.tron.core.exception.BadBlockException;
@@ -561,6 +561,13 @@ public class Manager {
     maxFlushCount = CommonParameter.getInstance().getStorage().getMaxFlushCount();
   }
 
+  @PreDestroy
+  public void destroy() {
+    session.reset();
+    if (validateSignService != null) {
+      validateSignService.shutdown();
+    }
+  }
   /**
    * init genesis block.
    */
@@ -1927,23 +1934,6 @@ public class Manager {
 
   public NullifierStore getNullifierStore() {
     return chainBaseManager.getNullifierStore();
-  }
-
-  public void closeAllStore() {
-    logger.info("******** Begin to close db. ********");
-    chainBaseManager.closeAllStore();
-    logger.info("******** End to close db. ********");
-  }
-
-  public void closeOneStore(ITronChainBase database) {
-    logger.info("******** Begin to close {}. ********", database.getName());
-    try {
-      database.close();
-    } catch (Exception e) {
-      logger.info("Failed to close {}.", database.getName(), e);
-    } finally {
-      logger.info("******** End to close {}. ********", database.getName());
-    }
   }
 
   public boolean isTooManyPending() {
