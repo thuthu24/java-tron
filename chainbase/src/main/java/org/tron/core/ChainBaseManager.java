@@ -5,11 +5,13 @@ import static org.tron.core.config.Parameter.ChainConstant.BLOCK_PRODUCED_INTERV
 import com.google.protobuf.ByteString;
 import java.util.List;
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.tron.common.storage.metric.DbStatService;
 import org.tron.common.utils.ForkController;
@@ -28,6 +30,7 @@ import org.tron.core.db.KhaosDatabase;
 import org.tron.core.db.PbftSignDataStore;
 import org.tron.core.db.RecentBlockStore;
 import org.tron.core.db.RecentTransactionStore;
+import org.tron.core.db.RevokingDatabase;
 import org.tron.core.db.TransactionStore;
 import org.tron.core.db2.core.ITronChainBase;
 import org.tron.core.exception.BadItemException;
@@ -245,7 +248,13 @@ public class ChainBaseManager {
   @Setter
   private long lowestBlockNum = -1; // except num = 0.
 
-  public void closeOneStore(ITronChainBase database) {
+  @Autowired
+  public ApplicationContext appCtx;
+
+  @Autowired
+  private RevokingDatabase revokingDatabase;
+
+  public void closeOneStore(ITronChainBase<?> database) {
     logger.info("******** Begin to close {}. ********",  database.getName());
     try {
       database.close();
@@ -256,41 +265,20 @@ public class ChainBaseManager {
     }
   }
 
-  public void closeAllStore() {
+  @PostConstruct
+  private void init() {
+    this.lowestBlockNum = this.blockIndexStore.getLimitNumber(1, 1).stream()
+        .map(BlockId::getNum).findFirst().orElse(0L);
+    this.nodeType = getLowestBlockNum() > 1 ? NodeType.LITE : NodeType.FULL;
+  }
+
+  @PreDestroy
+  private void close() {
+    logger.info("******** Begin to close db. ********");
     dbStatService.shutdown();
-    closeOneStore(transactionRetStore);
-    closeOneStore(recentBlockStore);
-    closeOneStore(transactionHistoryStore);
-    closeOneStore(transactionStore);
-    closeOneStore(accountStore);
-    closeOneStore(blockStore);
-    closeOneStore(blockIndexStore);
-    closeOneStore(accountIdIndexStore);
-    closeOneStore(accountIndexStore);
-    closeOneStore(witnessScheduleStore);
-    closeOneStore(assetIssueStore);
-    closeOneStore(dynamicPropertiesStore);
-    closeOneStore(abiStore);
-    closeOneStore(codeStore);
-    closeOneStore(contractStore);
-    closeOneStore(contractStateStore);
-    closeOneStore(storageRowStore);
-    closeOneStore(exchangeStore);
-    closeOneStore(proposalStore);
-    closeOneStore(votesStore);
-    closeOneStore(delegatedResourceStore);
-    closeOneStore(delegatedResourceAccountIndexStore);
-    closeOneStore(assetIssueV2Store);
-    closeOneStore(exchangeV2Store);
-    closeOneStore(nullifierStore);
-    closeOneStore(merkleTreeStore);
-    closeOneStore(delegationStore);
-    closeOneStore(proofStore);
-    closeOneStore(commonStore);
-    closeOneStore(commonDataBase);
-    closeOneStore(pbftSignDataStore);
-    closeOneStore(sectionBloomStore);
-    closeOneStore(accountAssetStore);
+    revokingDatabase.shutdown();
+    appCtx.getBeansOfType(ITronChainBase.class).values().forEach(this::closeOneStore);
+    logger.info("******** End to close db. ********");
   }
 
   // for test only
@@ -422,13 +410,6 @@ public class ChainBaseManager {
     chainBaseManager = manager;
     AssetUtil.setAccountAssetStore(manager.getAccountAssetStore());
     AssetUtil.setDynamicPropertiesStore(manager.getDynamicPropertiesStore());
-  }
-
-  @PostConstruct
-  private void init() {
-    this.lowestBlockNum = this.blockIndexStore.getLimitNumber(1, 1).stream()
-            .map(BlockId::getNum).findFirst().orElse(0L);
-    this.nodeType = getLowestBlockNum() > 1 ? NodeType.LITE : NodeType.FULL;
   }
 
   public boolean isLiteNode() {

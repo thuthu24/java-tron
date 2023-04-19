@@ -137,12 +137,6 @@ public class RpcApiServiceOnSolidity implements Service {
     }
 
     logger.info("RpcApiServiceOnSolidity started, listening on " + port);
-
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      System.err.println("*** shutting down gRPC server on solidity since JVM is shutting down");
-      //server.this.stop();
-      System.err.println("*** server on solidity shut down");
-    }));
   }
 
   private TransactionExtention transaction2Extention(Transaction transaction) {
@@ -177,7 +171,9 @@ public class RpcApiServiceOnSolidity implements Service {
   @Override
   public void stop() {
     if (apiServer != null) {
+      logger.info("RpcApiServiceOnSolidity shutdown...");
       apiServer.shutdown();
+      logger.info("RpcApiServiceOnSolidity shutdown complete");
     }
   }
 
