@@ -118,8 +118,7 @@ public class WorldStateCallBack {
     if (!exe()) {
       return;
     }
-    Metrics.gaugeSet(MetricKeys.Gauge.STATE_KEY_PER_TRAN_SIZE, trieEntryList.size());
-    Histogram.Timer timer = Metrics.histogramStartTimer(
+    Histogram.Timer timer = trieEntryList.isEmpty() ? null : Metrics.histogramStartTimer(
         MetricKeys.Histogram.TRON_STATE_PUT_PER_TRANS_LATENCY);
     trieEntryList.forEach(trie::put);
     trieEntryList.clear();
