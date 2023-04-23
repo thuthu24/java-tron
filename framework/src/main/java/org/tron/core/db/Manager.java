@@ -1365,6 +1365,7 @@ public class Manager {
             + 1));
     Metrics.gaugeSet(MetricKeys.Gauge.HEADER_HEIGHT, block.getNum());
     Metrics.gaugeSet(MetricKeys.Gauge.HEADER_TIME, block.getTimeStamp());
+    Metrics.gaugeSet(MetricKeys.Gauge.BLOCK_TRANS_SIZE, block.getTransactions().size());
   }
 
   /**

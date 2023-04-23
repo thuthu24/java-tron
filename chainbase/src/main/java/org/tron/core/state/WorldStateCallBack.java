@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Longs;
 import java.util.HashMap;
 import java.util.Map;
+import io.prometheus.client.Histogram;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
 import org.springframework.stereotype.Component;
 import org.tron.common.parameter.CommonParameter;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.ChainBaseManager;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.BlockCapsule;
@@ -115,8 +118,12 @@ public class WorldStateCallBack {
     if (!exe()) {
       return;
     }
+    Metrics.gaugeSet(MetricKeys.Gauge.STATE_KEY_PER_TRAN_SIZE, trieEntryList.size());
+    Histogram.Timer timer = Metrics.histogramStartTimer(
+        MetricKeys.Histogram.TRON_STATE_PUT_PER_TRANS_LATENCY);
     trieEntryList.forEach(trie::put);
     trieEntryList.clear();
+    Metrics.histogramObserve(timer);
   }
 
   public void preExeTrans() {

@@ -33,6 +33,8 @@ public class MetricKeys {
     public static final String DB_SIZE_BYTES = "tron:db_size_bytes";
     public static final String DB_SST_LEVEL = "tron:db_sst_level";
     public static final String MANAGER_QUEUE = "tron:manager_queue_size";
+    public static final String BLOCK_TRANS_SIZE = "tron:block_trans_size";
+    public static final String STATE_KEY_PER_TRAN_SIZE = "tron:state_key_per_tran_size";
     public static final String TX_CACHE = "tron:tx_cache";
     public static final String SYNC_BLOCK_QUEUE = "tron:sync_block_queue_size";
 
@@ -63,6 +65,10 @@ public class MetricKeys {
     public static final String MESSAGE_PROCESS_LATENCY = "tron:message_process_latency_seconds";
     public static final String BLOCK_FETCH_LATENCY = "tron:block_fetch_latency_seconds";
     public static final String BLOCK_RECEIVE_DELAY = "tron:block_receive_delay_seconds";
+    public static final String TRON_STATE_PUT_PER_TRANS_LATENCY =
+        "tron:state_put_per_trans_latency";
+    public static final String STATE_PUSH_BLOCK_FINISH_LATENCY =
+        "tron:state_push_block_finish_latency";
 
     private Histogram() {
       throw new IllegalStateException("Histogram");
