@@ -2,9 +2,9 @@ package org.tron.core.state;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Longs;
+import io.prometheus.client.Histogram;
 import java.util.HashMap;
 import java.util.Map;
-import io.prometheus.client.Histogram;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -143,7 +143,7 @@ public class WorldStateCallBack {
       BlockCapsule parentBlockCapsule =
           chainBaseManager.getBlockById(blockCapsule.getParentBlockId());
       Bytes32 rootHash = parentBlockCapsule.getArchiveRoot();
-      trie = new TrieImpl2(chainBaseManager.getWorldStateTrieStore(), rootHash);
+      trie = new TrieImpl2(chainBaseManager.getMerkleStorage(), rootHash);
     } catch (Exception e) {
       throw new MerkleTrieException(e.getMessage());
     }
@@ -165,7 +165,7 @@ public class WorldStateCallBack {
     if (!exe()) {
       return;
     }
-    trie = new TrieImpl2(chainBaseManager.getWorldStateTrieStore());
+    trie = new TrieImpl2(chainBaseManager.getMerkleStorage());
     clear();
     trie.commit();
     trie.flush();

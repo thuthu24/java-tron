@@ -23,7 +23,8 @@ public enum CacheType {
   // for leveldb or rocksdb cache
 
   // archive node
-  worldStateQueryInstance("worldStateQueryInstance");
+  worldStateQueryInstance("worldStateQueryInstance"),
+  worldStateTrie("world-state-trie");
 
   public final String type;
 

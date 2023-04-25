@@ -6,11 +6,10 @@ import com.beust.jcommander.internal.Lists;
 import com.google.common.primitives.Longs;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.ethereum.trie.MerkleStorage;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,7 +53,7 @@ public class WorldStateQueryInstanceTest {
 
   private static TronApplicationContext context;
   private static ChainBaseManager chainBaseManager;
-  private static WorldStateTrieStore worldStateTrieStore;
+  private static MerkleStorage merkleStorage;
 
   private static final ECKey ecKey = new ECKey(Utils.getRandom());
   private static final byte[] address = ecKey.getAddress();
@@ -70,10 +69,8 @@ public class WorldStateQueryInstanceTest {
     // init dbBackupConfig to avoid NPE
     Args.getInstance().dbBackupConfig = DbBackupConfig.getInstance();
     context = new TronApplicationContext(DefaultConfig.class);
-    Path parentPath = temporaryFolder.newFolder().toPath();
-    Path dbPath = Paths.get(parentPath.toString());
     chainBaseManager = context.getBean(ChainBaseManager.class);
-    worldStateTrieStore = chainBaseManager.getWorldStateTrieStore();
+    merkleStorage =  context.getBean(MerkleStorage.class);
   }
 
   @After
@@ -84,7 +81,7 @@ public class WorldStateQueryInstanceTest {
 
   @Test
   public void testGet() {
-    trieImpl2 = new TrieImpl2(worldStateTrieStore);
+    trieImpl2 = new TrieImpl2(merkleStorage);
     testGetAccount();
     testGetAccountAsset();
     testGetContractState();
@@ -279,7 +276,7 @@ public class WorldStateQueryInstanceTest {
   }
 
   private void testGetStorageRow() {
-    trieImpl2 = new TrieImpl2(worldStateTrieStore);
+    trieImpl2 = new TrieImpl2(merkleStorage);
     byte[] key = address;
     byte[] value = "test".getBytes();
     trieImpl2.put(StateType.encodeKey(StateType.StorageRow, key), Bytes.wrap(value));

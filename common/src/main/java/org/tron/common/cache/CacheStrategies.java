@@ -45,6 +45,10 @@ public class CacheStrategies {
       String.format(PATTERNS, 10000, 10000, "30s", CPUS);
   private static final String CACHE_STRATEGY_HUGE_DEFAULT =
       String.format(PATTERNS, 20000, 20000, "30s", CPUS);
+
+  private static final String CACHE_STRATEGY__WORLD_STATE_TRIE_DEFAULT =
+      String.format(PATTERNS, 100000, 100000, "60s", CPUS);
+
   private static final List<CacheType> CACHE_HUGE_DBS = Arrays.asList(storageRow, account);
 
   public static final List<String> CACHE_DBS = Stream.of(CACHE_SMALL_DBS, CACHE_NORMAL_DBS,
@@ -65,6 +69,9 @@ public class CacheStrategies {
     }
     if (CACHE_HUGE_DBS.contains(dbName)) {
       defaultStrategy = CACHE_STRATEGY_HUGE_DEFAULT;
+    }
+    if (dbName == CacheType.worldStateTrie) {
+      defaultStrategy = CACHE_STRATEGY__WORLD_STATE_TRIE_DEFAULT;
     }
     return defaultStrategy;
   }
