@@ -53,6 +53,11 @@ public enum StateType {
         .findFirst().orElse(UNDEFINED);
   }
 
+  public static StateType get(byte value) {
+    return Arrays.stream(StateType.values()).filter(type -> type.value == value)
+        .findFirst().orElse(UNDEFINED);
+  }
+
   public static byte[] encodeKey(StateType type, byte[] key) {
     byte[] p = new byte[]{type.value};
     return Bytes.concat(p, key);
@@ -60,6 +65,10 @@ public enum StateType {
 
   public static byte[] decodeKey(byte[] key) {
     return Arrays.copyOfRange(key, 1, key.length);
+  }
+
+  public static StateType decodeType(org.apache.tuweni.bytes.Bytes key) {
+    return StateType.get(key.get(0));
   }
 
 }

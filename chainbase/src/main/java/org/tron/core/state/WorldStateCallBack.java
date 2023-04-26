@@ -5,6 +5,7 @@ import com.google.common.primitives.Longs;
 import io.prometheus.client.Histogram;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.db2.common.Value;
 import org.tron.core.state.trie.TrieImpl2;
+import org.tron.protos.Protocol;
 
 @Slf4j(topic = "State")
 @Component
@@ -34,6 +36,8 @@ public class WorldStateCallBack {
   protected ChainBaseManager chainBaseManager;
 
   private BlockCapsule blockCapsule;
+
+  private ThreadLocal<Protocol.Transaction.Contract> contract = new ThreadLocal<>();
 
   @Getter
   @VisibleForTesting
@@ -125,12 +129,18 @@ public class WorldStateCallBack {
     Metrics.histogramObserve(timer);
   }
 
-  public void preExeTrans() {
+  public void preExeTrans(Protocol.Transaction.Contract contract) {
+    this.contract.set(contract);
     clear();
   }
 
   public void exeTransFinish() {
+    trieEntryList.keySet().stream().map(StateType::decodeType).collect(Collectors.groupingBy(
+        StateType::getName, Collectors.counting()))
+        .forEach((k, v) -> Metrics.gaugeInc(MetricKeys.Gauge.STATE_KEY_PER_TRAN_SIZE,
+            v, this.contract.get().toString(), k));
     clear();
+    this.contract.remove();
   }
 
   public void preExecute(BlockCapsule blockCapsule) {

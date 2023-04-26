@@ -1740,14 +1740,14 @@ public class Manager {
       accountStateCallBack.preExecute(block);
       List<TransactionInfo> results = new ArrayList<>();
       long num = block.getNum();
-      for (TransactionCapsule transactionCapsule : block.getTransactions()) {
-        transactionCapsule.setBlockNum(num);
+      for (TransactionCapsule capsule : block.getTransactions()) {
+        capsule.setBlockNum(num);
         if (block.generatedByMyself) {
-          transactionCapsule.setVerified(true);
+          capsule.setVerified(true);
         }
-        worldStateCallBack.preExeTrans();
+        worldStateCallBack.preExeTrans(capsule.getInstance().getRawData().getContract(0));
         accountStateCallBack.preExeTrans();
-        TransactionInfo result = processTransaction(transactionCapsule, block);
+        TransactionInfo result = processTransaction(capsule, block);
         accountStateCallBack.exeTransFinish();
         worldStateCallBack.exeTransFinish();
         if (Objects.nonNull(result)) {
