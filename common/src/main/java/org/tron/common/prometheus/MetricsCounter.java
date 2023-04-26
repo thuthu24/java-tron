@@ -19,6 +19,8 @@ class MetricsCounter {
     init(MetricKeys.Counter.INTERNAL_SERVICE_FAIL, "internal Service fail.",
         "class", "method");
     init(MetricKeys.Counter.SYNC_BLOCK_REMOVE_FAIL, "sync block remove fail.");
+    init(MetricKeys.Counter.STATE_KEY_PER_TRAN_SIZE, "state key size per trans.",
+        "type", "db");
   }
 
   private MetricsCounter() {

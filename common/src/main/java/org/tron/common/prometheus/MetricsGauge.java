@@ -21,8 +21,6 @@ class MetricsGauge {
     init(MetricKeys.Gauge.TX_CACHE, "tron tx cache info.", "type");
     init(MetricKeys.Gauge.SYNC_BLOCK_QUEUE, "tron sync block queue.", "type");
     init(MetricKeys.Gauge.BLOCK_TRANS_SIZE, "trans size per block .");
-    init(MetricKeys.Gauge.STATE_KEY_PER_TRAN_SIZE, "state key size per trans.",
-        "type", "db");
   }
 
   private MetricsGauge() {

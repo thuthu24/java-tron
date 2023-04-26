@@ -137,7 +137,7 @@ public class WorldStateCallBack {
   public void exeTransFinish() {
     trieEntryList.keySet().stream().map(StateType::decodeType).collect(Collectors.groupingBy(
         StateType::getName, Collectors.counting()))
-        .forEach((k, v) -> Metrics.gaugeInc(MetricKeys.Gauge.STATE_KEY_PER_TRAN_SIZE,
+        .forEach((k, v) -> Metrics.counterInc(MetricKeys.Counter.STATE_KEY_PER_TRAN_SIZE,
             v, this.contract.get().getType().name(), k));
     clear();
     this.contract.remove();

@@ -18,6 +18,7 @@ public class MetricKeys {
     public static final String P2P_DISCONNECT = "tron:p2p_disconnect";
     public static final String INTERNAL_SERVICE_FAIL = "tron:internal_service_fail";
     public static final String SYNC_BLOCK_REMOVE_FAIL = "tron:sync_block_remove_fail";
+    public static final String STATE_KEY_PER_TRAN_SIZE = "tron:state_key_per_tran_size";
 
     private Counter() {
       throw new IllegalStateException("Counter");
@@ -34,7 +35,6 @@ public class MetricKeys {
     public static final String DB_SST_LEVEL = "tron:db_sst_level";
     public static final String MANAGER_QUEUE = "tron:manager_queue_size";
     public static final String BLOCK_TRANS_SIZE = "tron:block_trans_size";
-    public static final String STATE_KEY_PER_TRAN_SIZE = "tron:state_key_per_tran_size";
     public static final String TX_CACHE = "tron:tx_cache";
     public static final String SYNC_BLOCK_QUEUE = "tron:sync_block_queue_size";
 
