@@ -188,6 +188,10 @@ public class CommonParameter {
   @Getter
   @Setter
   public String p2pNodeId;
+  @Getter
+  @Setter
+  public long syncFetchBatchNum;
+
   //If you are running a solidity node for java tron, this flag is set to true
   @Getter
   @Setter

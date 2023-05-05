@@ -139,6 +139,7 @@ public class Args extends CommonParameter {
     PARAMETER.nodeDiscoveryPingTimeout = 15000;
     PARAMETER.nodeP2pPingInterval = 0L;
     PARAMETER.nodeP2pVersion = 0;
+    PARAMETER.syncFetchBatchNum = 2000;
     PARAMETER.rpcPort = 0;
     PARAMETER.rpcOnSolidityPort = 0;
     PARAMETER.rpcOnPBFTPort = 0;
@@ -656,6 +657,15 @@ public class Args extends CommonParameter {
     PARAMETER.nodeP2pVersion =
         config.hasPath(Constant.NODE_P2P_VERSION)
             ? config.getInt(Constant.NODE_P2P_VERSION) : 0;
+
+    PARAMETER.syncFetchBatchNum = config.hasPath(Constant.NODE_SYNC_FETCH_BATCH_NUM) ? config
+        .getInt(Constant.NODE_SYNC_FETCH_BATCH_NUM) : 2000;
+    if (PARAMETER.syncFetchBatchNum > 2000) {
+      PARAMETER.syncFetchBatchNum = 2000;
+    }
+    if (PARAMETER.syncFetchBatchNum < 100) {
+      PARAMETER.syncFetchBatchNum = 100;
+    }
 
     PARAMETER.rpcPort =
         config.hasPath(Constant.NODE_RPC_PORT)
