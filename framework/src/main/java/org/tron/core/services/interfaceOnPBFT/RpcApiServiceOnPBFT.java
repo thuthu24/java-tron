@@ -144,9 +144,14 @@ public class RpcApiServiceOnPBFT implements Service {
   @Override
   public void stop() {
     if (apiServer != null) {
-      logger.info("RpcApiServiceOnPBFT shutdown...");
-      apiServer.shutdown();
-      logger.info("RpcApiServiceOnPBFT shutdown complete");
+      try {
+        logger.info("RpcApiServiceOnPBFT shutdown...");
+        apiServer.shutdown().awaitTermination();
+        logger.info("RpcApiServiceOnPBFT shutdown complete");
+      } catch (InterruptedException e) {
+        logger.warn("{}", e);
+        Thread.currentThread().interrupt();
+      }
     }
   }
 

@@ -378,9 +378,14 @@ public class RpcApiService implements Service {
   @Override
   public void stop() {
     if (apiServer != null) {
-      logger.info("RpcApiService shutdown ...");
-      apiServer.shutdown();
-      logger.info("RpcApiService shutdown complete");
+      try {
+        logger.info("RpcApiService shutdown ...");
+        apiServer.shutdown().awaitTermination();
+        logger.info("RpcApiService shutdown complete");
+      } catch (InterruptedException e) {
+        logger.warn("{}", e);
+        Thread.currentThread().interrupt();
+      }
     }
   }
 

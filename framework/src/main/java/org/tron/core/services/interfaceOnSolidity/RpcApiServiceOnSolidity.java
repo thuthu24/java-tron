@@ -173,9 +173,14 @@ public class RpcApiServiceOnSolidity implements Service {
   @Override
   public void stop() {
     if (apiServer != null) {
-      logger.info("RpcApiServiceOnSolidity shutdown...");
-      apiServer.shutdown();
-      logger.info("RpcApiServiceOnSolidity shutdown complete");
+      try {
+        logger.info("RpcApiServiceOnSolidity shutdown...");
+        apiServer.shutdown().awaitTermination();
+        logger.info("RpcApiServiceOnSolidity shutdown complete");
+      } catch (InterruptedException e) {
+        logger.warn("{}", e);
+        Thread.currentThread().interrupt();
+      }
     }
   }
 
