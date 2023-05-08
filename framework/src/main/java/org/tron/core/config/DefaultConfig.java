@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.tron.common.parameter.CommonParameter;
 import org.tron.common.utils.StorageUtils;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.RecentTransactionStore;
@@ -95,6 +96,9 @@ public class DefaultConfig {
 
   @Bean
   public TransactionCache transactionCache() {
+    if (CommonParameter.getInstance().isP2pDisable()) {
+      return null;
+    }
     return new TransactionCache("trans-cache", appCtx.getBean(RecentTransactionStore.class));
   }
 

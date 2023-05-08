@@ -2367,6 +2367,9 @@ public class Manager {
     // When using bloom filter for transaction de-duplication,
     // it is possible to use trans for secondary confirmation.
     // Init trans db for liteNode if needed.
+    if (CommonParameter.getInstance().isP2pDisable()) {
+      return;
+    }
     long headNum = chainBaseManager.getDynamicPropertiesStore().getLatestBlockHeaderNumber();
     long recentBlockCount = chainBaseManager.getRecentBlockStore().size();
     long recentBlockStart = headNum - recentBlockCount + 1;
