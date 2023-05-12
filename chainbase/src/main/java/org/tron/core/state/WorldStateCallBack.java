@@ -49,7 +49,7 @@ public class WorldStateCallBack {
   }
 
   public void callBack(StateType type, byte[] key, byte[] value, Value.Operator op) {
-    if (!exe() || type == StateType.UNDEFINED) {
+    if (!exe() || type == StateType.UNDEFINED || type == StateType.Delegation) {
       return;
     }
     if (op == Value.Operator.DELETE || ArrayUtils.isEmpty(value)) {
