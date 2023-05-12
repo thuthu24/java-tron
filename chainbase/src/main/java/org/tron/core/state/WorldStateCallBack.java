@@ -114,47 +114,49 @@ public class WorldStateCallBack {
   }
 
   private byte[] parseDelegationKey(byte[] key) {
-    String sk  = new String(key);
     long num = 0;
-    byte type;
+    byte type = 0x0;
     byte[] address;
+    // beginCycle
+    if (key.length == WorldStateQueryInstance.ADDRESS_SIZE) {
+      return ByteBuffer.allocate(Long.BYTES + WorldStateQueryInstance.ADDRESS_SIZE + Byte.BYTES)
+          .putLong(num)
+          .put(key)
+          .put(type)
+          .array();
+    }
+    String sk  = new String(key);
     if (sk.charAt(0) == '-') {
       num = -1;
     }
-
     String[] keys = sk.split("-");
 
-    // beginCycle
-    if (keys.length == 1) {
-      type = 0x0;
-      address = ByteArray.fromHexString(keys[0]);
-    } else {
-      if (keys[0].equals("end")) {  // endCycle
-        type = 0x1;
+    if (keys[0].equals("end")) {  // endCycle
+      type = 0x1;
+      address = ByteArray.fromHexString(keys[1]);
+    } else { // other
+      if (num != -1) {
+        num = Long.parseLong(keys[0]);
         address = ByteArray.fromHexString(keys[1]);
-      } else { // other
-        if (num != -1) {
-          num = Long.parseLong(keys[0]);
-          address = ByteArray.fromHexString(keys[1]);
-        } else { // init
-          address = ByteArray.fromHexString(keys[2]);
-        }
-        String s = keys[keys.length - 1];
-        if (s.charAt(0) == 'a') {
-          type = 0x2;
-        } else if (s.charAt(0) == 'b') {
-          type = 0x3;
-        } else if (s.charAt(0) == 'r') {
-          type = 0x4;
-        } else if (s.charAt(0) == 'v' && s.charAt(1) == 'i') {
-          type = 0x5;
-        } else if (s.charAt(0) == 'v' && s.charAt(1) == 'o') {
-          type = 0x6;
-        } else {
-          throw new IllegalArgumentException("unknown type : " + s);
-        }
+      } else { // init
+        address = ByteArray.fromHexString(keys[2]);
+      }
+      String s = keys[keys.length - 1];
+      if (s.charAt(0) == 'a') {
+        type = 0x2;
+      } else if (s.charAt(0) == 'b') {
+        type = 0x3;
+      } else if (s.charAt(0) == 'r') {
+        type = 0x4;
+      } else if (s.charAt(0) == 'v' && s.charAt(1) == 'i') {
+        type = 0x5;
+      } else if (s.charAt(0) == 'v' && s.charAt(1) == 'o') {
+        type = 0x6;
+      } else {
+        throw new IllegalArgumentException("unknown type : " + s);
       }
     }
+
     return ByteBuffer.allocate(Long.BYTES + WorldStateQueryInstance.ADDRESS_SIZE + Byte.BYTES)
         .putLong(num)
         .put(address)
