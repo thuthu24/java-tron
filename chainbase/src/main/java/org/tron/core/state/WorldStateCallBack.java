@@ -3,6 +3,7 @@ package org.tron.core.state;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Longs;
 import io.prometheus.client.Histogram;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.prometheus.MetricKeys;
 import org.tron.common.prometheus.Metrics;
+import org.tron.common.utils.ByteArray;
 import org.tron.core.ChainBaseManager;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.BlockCapsule;
@@ -92,7 +94,11 @@ public class WorldStateCallBack {
   }
 
   private void add(StateType type, byte[] key, byte[] value) {
-    trieEntryList.put(Bytes.of(StateType.encodeKey(type, key)), Bytes.of(value));
+    if (type == StateType.Delegation) {
+      addFix32(type, parseDelegationKey(key), value);
+    } else {
+      trieEntryList.put(Bytes.of(StateType.encodeKey(type, key)), Bytes.of(value));
+    }
   }
 
   private void addFix32(StateType type, byte[] key, byte[] value) {
@@ -105,6 +111,55 @@ public class WorldStateCallBack {
 
   public static Bytes32 fix32(Bytes key) {
     return Bytes32.rightPad(key);
+  }
+
+  private byte[] parseDelegationKey(byte[] key) {
+    String sk  = new String(key);
+    long num = 0;
+    byte type;
+    byte[] address;
+    if (sk.charAt(0) == '-') {
+      num = -1;
+    }
+
+    String[] keys = sk.split("-");
+
+    // beginCycle
+    if (keys.length == 1) {
+      type = 0x0;
+      address = ByteArray.fromHexString(keys[0]);
+    } else {
+      if (keys[0].equals("end")) {  // endCycle
+        type = 0x1;
+        address = ByteArray.fromHexString(keys[1]);
+      } else { // other
+        if (num != -1) {
+          num = Long.parseLong(keys[0]);
+          address = ByteArray.fromHexString(keys[1]);
+        } else { // init
+          address = ByteArray.fromHexString(keys[2]);
+        }
+        String s = keys[keys.length - 1];
+        if (s.charAt(0) == 'a') {
+          type = 0x2;
+        } else if (s.charAt(0) == 'b') {
+          type = 0x3;
+        } else if (s.charAt(0) == 'r') {
+          type = 0x4;
+        } else if (s.charAt(0) == 'v' && s.charAt(1) == 'i') {
+          type = 0x5;
+        } else if (s.charAt(0) == 'v' && s.charAt(1) == 'o') {
+          type = 0x6;
+        } else {
+          throw new IllegalArgumentException("unknown type : " + s);
+        }
+      }
+    }
+    return ByteBuffer.allocate(Long.BYTES + WorldStateQueryInstance.ADDRESS_SIZE + Byte.BYTES)
+        .putLong(num)
+        .put(address)
+        .put(type)
+        .array();
   }
 
 

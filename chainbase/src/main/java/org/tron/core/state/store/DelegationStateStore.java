@@ -7,6 +7,7 @@ import org.tron.core.db2.core.Chainbase;
 import org.tron.core.state.WorldStateQueryInstance;
 import org.tron.core.store.DelegationStore;
 
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -39,6 +40,68 @@ public class DelegationStateStore extends DelegationStore implements StateStore 
   @Override
   public BytesCapsule getUnchecked(byte[] key) {
     return worldStateQueryInstance.getDelegation(key);
+  }
+
+  @Override
+  public long getBeginCycle(byte[] address) {
+    return super.getBeginCycle(buildBeginCycleKey(address));
+  }
+
+  private byte[] buildBeginCycleKey(byte[] address) {
+    return ByteBuffer.allocate(Long.BYTES + WorldStateQueryInstance.ADDRESS_SIZE + Byte.BYTES)
+        .putLong(0)
+        .put(address)
+        .put((byte) 0x0)
+        .array();
+  }
+
+  @Override
+  protected byte[] buildVoteKey(long cycle, byte[] address) {
+    return ByteBuffer.allocate(Long.BYTES + WorldStateQueryInstance.ADDRESS_SIZE + Byte.BYTES)
+        .putLong(cycle)
+        .put(address)
+        .put((byte) 0x6)
+        .array();
+  }
+
+  protected byte[] buildRewardKey(long cycle, byte[] address) {
+    return ByteBuffer.allocate(Long.BYTES + WorldStateQueryInstance.ADDRESS_SIZE + Byte.BYTES)
+        .putLong(cycle)
+        .put(address)
+        .put((byte) 0x4)
+        .array();
+  }
+
+  protected byte[] buildAccountVoteKey(long cycle, byte[] address) {
+    return ByteBuffer.allocate(Long.BYTES + WorldStateQueryInstance.ADDRESS_SIZE + Byte.BYTES)
+        .putLong(cycle)
+        .put(address)
+        .put((byte) 0x2)
+        .array();
+  }
+
+  protected byte[] buildEndCycleKey(byte[] address) {
+    return ByteBuffer.allocate(Long.BYTES + WorldStateQueryInstance.ADDRESS_SIZE + Byte.BYTES)
+        .putLong(0)
+        .put(address)
+        .put((byte) 0x1)
+        .array();
+  }
+
+  protected byte[] buildBrokerageKey(long cycle, byte[] address) {
+    return ByteBuffer.allocate(Long.BYTES + WorldStateQueryInstance.ADDRESS_SIZE + Byte.BYTES)
+        .putLong(cycle)
+        .put(address)
+        .put((byte) 0x3)
+        .array();
+  }
+
+  protected byte[] buildViKey(long cycle, byte[] address) {
+    return ByteBuffer.allocate(Long.BYTES + WorldStateQueryInstance.ADDRESS_SIZE + Byte.BYTES)
+        .putLong(cycle)
+        .put(address)
+        .put((byte) 0x5)
+        .array();
   }
 
   @Override

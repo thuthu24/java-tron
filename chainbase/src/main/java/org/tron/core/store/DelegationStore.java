@@ -149,27 +149,27 @@ public class DelegationStore extends TronStoreWithRevoking<BytesCapsule> {
     }
   }
 
-  private byte[] buildVoteKey(long cycle, byte[] address) {
+  protected byte[] buildVoteKey(long cycle, byte[] address) {
     return (cycle + "-" + Hex.toHexString(address) + "-vote").getBytes();
   }
 
-  private byte[] buildRewardKey(long cycle, byte[] address) {
+  protected byte[] buildRewardKey(long cycle, byte[] address) {
     return (cycle + "-" + Hex.toHexString(address) + "-reward").getBytes();
   }
 
-  private byte[] buildAccountVoteKey(long cycle, byte[] address) {
+  protected byte[] buildAccountVoteKey(long cycle, byte[] address) {
     return (cycle + "-" + Hex.toHexString(address) + "-account-vote").getBytes();
   }
 
-  private byte[] buildEndCycleKey(byte[] address) {
+  protected byte[] buildEndCycleKey(byte[] address) {
     return ("end-" + Hex.toHexString(address)).getBytes();
   }
 
-  private byte[] buildBrokerageKey(long cycle, byte[] address) {
+  protected byte[] buildBrokerageKey(long cycle, byte[] address) {
     return (cycle + "-" + Hex.toHexString(address) + "-brokerage").getBytes();
   }
 
-  private byte[] buildViKey(long cycle, byte[] address) {
+  protected byte[] buildViKey(long cycle, byte[] address) {
     return (cycle + "-" + Hex.toHexString(address) + "-vi").getBytes();
   }
 
