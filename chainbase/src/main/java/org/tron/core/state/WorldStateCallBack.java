@@ -124,7 +124,12 @@ public class WorldStateCallBack {
     }
     Histogram.Timer timer = trieEntryList.isEmpty() ? null : Metrics.histogramStartTimer(
         MetricKeys.Histogram.TRON_STATE_PUT_PER_TRANS_LATENCY);
-    trieEntryList.forEach(trie::put);
+    trieEntryList.forEach((key, value) -> {
+      Histogram.Timer t =  Metrics.histogramStartTimer(
+          MetricKeys.Histogram.TRON_STATE_PUT_LATENCY, StateType.decodeType(key).getName());
+      trie.put(key, value);
+      Metrics.histogramObserve(t);
+    });
     trieEntryList.clear();
     Metrics.histogramObserve(timer);
   }
