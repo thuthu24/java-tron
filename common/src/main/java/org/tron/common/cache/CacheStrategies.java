@@ -46,8 +46,9 @@ public class CacheStrategies {
   private static final String CACHE_STRATEGY_HUGE_DEFAULT =
       String.format(PATTERNS, 20000, 20000, "30s", CPUS);
 
+  // for world state trie cache 2G
   private static final String CACHE_STRATEGY__WORLD_STATE_TRIE_DEFAULT =
-      String.format(PATTERNS, 100000, 100000, "60s", CPUS);
+      "maximumWeight=2147483648,recordStats";
 
   private static final List<CacheType> CACHE_HUGE_DBS = Arrays.asList(storageRow, account);
 

@@ -2,6 +2,7 @@ package org.tron.common.cache;
 
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.CacheStats;
+import com.google.common.cache.Weigher;
 import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,6 +29,14 @@ public class CacheManager {
                                                  CacheLoader<K, V> loader) {
     TronCache<K, V> cache = new TronCache<>(name, CommonParameter.getInstance()
             .getStorage().getCacheStrategy(name), loader);
+    CACHES.put(name, cache);
+    return cache;
+  }
+
+  public  static <K, V> TronCache<K, V> allocate(CacheType name, CacheLoader<K, V> loader,
+                                                 Weigher<K, V> weigher) {
+    TronCache<K, V> cache = new TronCache<>(name, CommonParameter.getInstance()
+        .getStorage().getCacheStrategy(name), loader, weigher);
     CACHES.put(name, cache);
     return cache;
   }
