@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.ethereum.trie.CompactEncoding;
 import org.hyperledger.besu.ethereum.trie.KeyValueMerkleStorage;
 import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
 import org.hyperledger.besu.storage.KeyValueStorage;
@@ -84,8 +85,14 @@ public class KeyValueMerkleCacheStorage extends KeyValueMerkleStorage {
     if (location.size() < stateTypeLen) {
       return StateType.UNDEFINED;
     }
-    int type = location.slice(0, stateTypeLen).toInt();
-    StateType s = StateType.get((byte) type);
+    byte high = location.get(0);
+    byte low = location.get(1);
+    if ((high & 0xf0) != 0 || (low & 0xf0) != 0) {
+      throw new IllegalArgumentException("Invalid path: contains elements larger than a nibble");
+    }
+
+    byte type = (byte) (high << 4 | low);
+    StateType s = StateType.get(type);
     if (cacheTypes.contains(s)) {
       return s;
     }
