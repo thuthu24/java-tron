@@ -46,9 +46,9 @@ public class CacheStrategies {
   private static final String CACHE_STRATEGY_HUGE_DEFAULT =
       String.format(PATTERNS, 20000, 20000, "30s", CPUS);
 
-  // for world state trie cache 2G
-  private static final String CACHE_STRATEGY__WORLD_STATE_TRIE_DEFAULT =
-      "maximumWeight=2147483648,recordStats";
+  // for world state trie cache 1G
+  private static final String CACHE_STRATEGY_WORLD_STATE_TRIE_DEFAULT =
+      "maximumWeight=1073741824,expireAfterAccess=7d,recordStats";
 
   private static final List<CacheType> CACHE_HUGE_DBS = Arrays.asList(storageRow, account);
 
@@ -71,8 +71,8 @@ public class CacheStrategies {
     if (CACHE_HUGE_DBS.contains(dbName)) {
       defaultStrategy = CACHE_STRATEGY_HUGE_DEFAULT;
     }
-    if (dbName == CacheType.worldStateTrie) {
-      defaultStrategy = CACHE_STRATEGY__WORLD_STATE_TRIE_DEFAULT;
+    if (dbName.type.contains(CacheType.worldStateTrie.type)) {
+      defaultStrategy = CACHE_STRATEGY_WORLD_STATE_TRIE_DEFAULT;
     }
     return defaultStrategy;
   }

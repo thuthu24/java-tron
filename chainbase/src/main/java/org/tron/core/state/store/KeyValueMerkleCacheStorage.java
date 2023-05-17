@@ -1,9 +1,13 @@
 package org.tron.core.state.store;
 
 import com.google.common.cache.CacheLoader;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.trie.KeyValueMerkleStorage;
@@ -23,46 +27,35 @@ import org.tron.core.state.annotation.NeedWorldStateTrieStoreCondition;
 @Conditional(NeedWorldStateTrieStoreCondition.class)
 public class KeyValueMerkleCacheStorage extends KeyValueMerkleStorage {
 
-  private final TronCache<Bytes32, Optional<Bytes>> cache;
+  private final Map<StateType, TronCache<Bytes32, Optional<Bytes>>> cache;
 
-  private final Predicate<Bytes> isCached;
-
-  private final byte stateTypeLen = Byte.BYTES << 1;
+  private final List<StateType> cacheTypes = Arrays.asList(
+      StateType.DelegatedResource, StateType.DelegatedResourceAccountIndex,
+      StateType.Code, StateType.Contract,
+      StateType.Votes);
 
   @Autowired
   public KeyValueMerkleCacheStorage(@Autowired KeyValueStorage keyValueStorage) {
     super(keyValueStorage);
-    cache = CacheManager.allocate(CacheType.worldStateTrie,
-        new CacheLoader<Bytes32, Optional<Bytes>>() {
-          @Override
-          public Optional<Bytes> load(@NotNull Bytes32 key) {
-            return get(key);
-          }
-        }, (key, value) -> Bytes32.SIZE + value.orElse(Bytes.EMPTY).size());
-    isCached = location -> {
-      if (location.size() < stateTypeLen) {
-        return false;
-      }
-      int type = location.slice(0, stateTypeLen).toInt();
-      StateType s = StateType.get((byte) type);
-      switch (s) {
-        case DelegatedResource:
-        case DelegatedResourceAccountIndex:
-        case Code:
-        case Contract:
-        case Votes:
-          return true;
-        default:
-          return false;
-      }
-    };
+    cache = Collections.synchronizedMap(new HashMap<>());
+    for (StateType stateType : cacheTypes) {
+      cache.put(stateType, CacheManager.allocate(CacheType.findByType(
+          CacheType.worldStateTrie.type + '.' + stateType.getName()),
+          new CacheLoader<Bytes32, Optional<Bytes>>() {
+            @Override
+            public Optional<Bytes> load(@NotNull Bytes32 key) {
+              return get(key);
+            }
+          }, (key, value) -> Bytes32.SIZE + value.orElse(Bytes.EMPTY).size()));
+    }
   }
 
   @Override
   public Optional<Bytes> get(final Bytes location, final Bytes32 hash) {
     try {
-      if (isCached.test(location)) {
-        return cache.get(hash);
+      StateType stateType = parse(location);
+      if (stateType != StateType.UNDEFINED) {
+        return cache.get(stateType).get(hash);
       }
       return get(hash);
     } catch (ExecutionException e) {
@@ -80,8 +73,22 @@ public class KeyValueMerkleCacheStorage extends KeyValueMerkleStorage {
   @Override
   public void put(final Bytes location, final Bytes32 hash, final Bytes value) {
     super.put(location, hash, value);
-    if (isCached.test(location)) {
-      cache.put(hash, Optional.of(value));
+    StateType stateType = parse(location);
+    if (stateType != StateType.UNDEFINED) {
+      cache.get(stateType).put(hash, Optional.of(value));
     }
+  }
+
+  private StateType parse(final Bytes location) {
+    byte stateTypeLen = Byte.BYTES << 1;
+    if (location.size() < stateTypeLen) {
+      return StateType.UNDEFINED;
+    }
+    int type = location.slice(0, stateTypeLen).toInt();
+    StateType s = StateType.get((byte) type);
+    if (cacheTypes.contains(s)) {
+      return s;
+    }
+    return StateType.UNDEFINED;
   }
 }
