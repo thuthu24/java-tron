@@ -27,8 +27,8 @@ public enum CacheType {
   worldStateTrieDelegatedResource("world-state-trie.DelegatedResource"),
   worldStateTrieDelegatedResourceAccountIndex("world-state-trie.DelegatedResourceAccountIndex"),
   worldStateTrieVotes("world-state-trie.votes"),
-  worldStateTrieCode("world-state-trie.code"),
-  worldStateTrieContract("world-state-trie.contract"),
+  worldStateTrieStorageRow("world-state-trie.storage-row"),
+  worldStateTrieAccount("world-state-trie.account"),
   worldStateTrie("world-state-trie");
 
   public final String type;

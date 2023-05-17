@@ -31,7 +31,7 @@ public class KeyValueMerkleCacheStorage extends KeyValueMerkleStorage {
 
   private final List<StateType> cacheTypes = Arrays.asList(
       StateType.DelegatedResource, StateType.DelegatedResourceAccountIndex,
-      StateType.Code, StateType.Contract,
+      StateType.StorageRow, StateType.Account,
       StateType.Votes);
 
   @Autowired
