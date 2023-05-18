@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.ethereum.trie.CompactEncoding;
 import org.hyperledger.besu.ethereum.trie.KeyValueMerkleStorage;
 import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
 import org.hyperledger.besu.storage.KeyValueStorage;
@@ -33,7 +32,8 @@ public class KeyValueMerkleCacheStorage extends KeyValueMerkleStorage {
   private final List<StateType> cacheTypes = Arrays.asList(
       StateType.DelegatedResource, StateType.DelegatedResourceAccountIndex,
       StateType.StorageRow, StateType.Account,
-      StateType.Votes);
+      StateType.Votes,
+      StateType.Code, StateType.Contract);
 
   @Autowired
   public KeyValueMerkleCacheStorage(@Autowired KeyValueStorage keyValueStorage) {
