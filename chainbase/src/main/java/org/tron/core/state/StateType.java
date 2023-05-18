@@ -2,22 +2,23 @@ package org.tron.core.state;
 
 import com.google.common.primitives.Bytes;
 import java.util.Arrays;
+import java.util.List;
 import lombok.Getter;
 
 public enum StateType {
 
   UNDEFINED((byte) 0x00, "undefined"),
 
-  Account((byte) 0x01, "account"),
-  AccountAsset((byte) 0x02, "account-asset"),
-  AccountIndex((byte) 0x03, "account-index"),
-  AccountIdIndex((byte) 0x04, "accountid-index"),
-  AssetIssue((byte) 0x05, "asset-issue-v2"),
-  Code((byte) 0x07, "code"),
-  Contract((byte) 0x08, "contract"),
-  Delegation((byte) 0x09, "delegation"),
-  DelegatedResource((byte) 0x0a, "DelegatedResource"),
-  DelegatedResourceAccountIndex((byte) 0x0b, "DelegatedResourceAccountIndex"),
+  Account((byte) 0x01, "account"), // address -> account
+  AccountAsset((byte) 0x02, "account-asset"), // address + assetid -> account-asset
+  AccountIndex((byte) 0x03, "account-index"), // name -> account-index
+  AccountIdIndex((byte) 0x04, "accountid-index"), // id -> accountid-index
+  AssetIssue((byte) 0x05, "asset-issue-v2"), // id -> asset-issue-v2
+  Code((byte) 0x07, "code"), // address -> code
+  Contract((byte) 0x08, "contract"), // address -> contract
+  Delegation((byte) 0x09, "delegation"), // mixed
+  DelegatedResource((byte) 0x0a, "DelegatedResource"), //[0x1] + address*2-> DelegatedResource
+  DelegatedResourceAccountIndex((byte) 0x0b, "DelegatedResourceAccountIndex"), //[0x1] + address*2-> DelegatedResource
   Exchange((byte) 0x0c, "exchange"),
   ExchangeV2((byte) 0x0d, "exchange-v2"),
   IncrementalMerkleTree((byte) 0x0e, "IncrementalMerkleTree"),
@@ -26,18 +27,22 @@ public enum StateType {
   MarketPairPriceToOrder((byte) 0x11, "market_pair_price_to_order"),
   MarketPairToPrice((byte) 0x12, "market_pair_to_price"),
   Nullifier((byte) 0x13, "nullifier"),
-  Properties((byte) 0x14, "properties"),
-  Proposal((byte) 0x15, "proposal"),
-  StorageRow((byte) 0x16, "storage-row"),
-  Votes((byte) 0x17, "votes"),
-  Witness((byte) 0x18, "witness"),
+  Properties((byte) 0x14, "properties"), // mixed
+  Proposal((byte) 0x15, "proposal"), // id -> proposal
+  StorageRow((byte) 0x16, "storage-row"), // hash(address) -> storage-row
+  Votes((byte) 0x17, "votes"), // address -> votes
+  Witness((byte) 0x18, "witness"), // address -> witness
   WitnessSchedule((byte) 0x19, "witness_schedule"),
-  ContractState((byte) 0x20, "contract-state");
+  ContractState((byte) 0x20, "contract-state"); // address -> contract-state
 
 
   private final byte value;
   @Getter
   private final String name;
+
+  private static final List<StateType> accountStateTypes = Arrays.asList(
+      Account, AccountAsset, Code, Contract, StorageRow, Votes, Witness,
+      ContractState, DelegatedResource, DelegatedResourceAccountIndex);
 
   StateType(byte value, String name) {
     this.value = value;
@@ -60,6 +65,9 @@ public enum StateType {
 
   public static byte[] encodeKey(StateType type, byte[] key) {
     byte[] p = new byte[]{type.value};
+    if (accountStateTypes.contains(type)) {
+      return Bytes.concat(key, p);
+    }
     return Bytes.concat(p, key);
   }
 
