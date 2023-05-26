@@ -21,6 +21,7 @@ import picocli.CommandLine;
         DbAccountParser.class,
         DbTrim.class,
         DbBlockRetScan.class,
+        DbBlockStats.class,
         DbTrim.class,
         DbRoot.class
     },
