@@ -47,6 +47,16 @@ public class LevelDBIterator implements DBIterator {
   }
 
   @Override
+  public Map.Entry<byte[], byte[]> prev() {
+    return iterator.prev();
+  }
+
+  @Override
+  public boolean hasPrev() {
+    return iterator.hasPrev();
+  }
+
+  @Override
   public Map.Entry<byte[], byte[]> next() {
     return iterator.next();
   }

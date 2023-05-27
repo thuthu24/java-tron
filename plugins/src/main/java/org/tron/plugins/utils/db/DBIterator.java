@@ -56,4 +56,8 @@ public interface DBIterator extends Iterator<Map.Entry<byte[], byte[]>>, Closeab
    * @return the value for the current entry
    */
   byte[] getValue();
+
+  Map.Entry<byte[], byte[]> prev();
+
+  boolean hasPrev();
 }

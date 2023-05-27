@@ -65,4 +65,3 @@ protobuf {
 clean.doFirst {
     delete "src/main/java"
 }
-
