@@ -1417,8 +1417,11 @@ public class Manager {
       chainBaseManager.getBalanceTraceStore().initCurrentTransactionBalanceTrace(trxCap);
     }
 
-    validateTapos(trxCap);
-    validateCommon(trxCap);
+    if (Objects.isNull(blockCap) || !blockCap.generatedByMyself) {
+      validateTapos(trxCap);
+      validateCommon(trxCap);
+      validateDup(trxCap);
+    }
 
     if (trxCap.getInstance().getRawData().getContractList().size() != 1) {
       throw new ContractSizeNotEqualToOneException(
@@ -1426,8 +1429,6 @@ public class Manager {
               "tx %s contract size should be exactly 1, this is extend feature ,actual :%d",
           txId, trxCap.getInstance().getRawData().getContractList().size()));
     }
-
-    validateDup(trxCap);
 
     if (!trxCap.validateSignature(chainBaseManager.getAccountStore(),
         chainBaseManager.getDynamicPropertiesStore())) {
@@ -2373,6 +2374,9 @@ public class Manager {
     // When using bloom filter for transaction de-duplication,
     // it is possible to use trans for secondary confirmation.
     // Init trans db for liteNode if needed.
+    if (CommonParameter.getInstance().isP2pDisable()) {
+      return;
+    }
     long headNum = chainBaseManager.getDynamicPropertiesStore().getLatestBlockHeaderNumber();
     long recentBlockCount = chainBaseManager.getRecentBlockStore().size();
     long recentBlockStart = headNum - recentBlockCount + 1;
