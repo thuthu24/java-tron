@@ -110,10 +110,10 @@ public class WorldStateQueryInstance {
             v.toLong())
     );
     Bytes address =  Bytes.of(account.getAddress().toByteArray());
-    Bytes32 min = fix32(Bytes.wrap(Bytes.of(StateType.AccountAsset.value()), address,
+    Bytes32 min = fix32(Bytes.wrap(address, Bytes.of(StateType.AccountAsset.value()),
             MIN_ASSET_ID));
 
-    Bytes32 max = fix32(Bytes.wrap(Bytes.of(StateType.AccountAsset.value()), address,
+    Bytes32 max = fix32(Bytes.wrap(address, Bytes.of(StateType.AccountAsset.value()),
             MAX_ASSET_ID));
     TreeMap<Bytes32, Bytes> state = trieImpl.entriesFrom(min, max);
     // remove asset is deleted
@@ -121,7 +121,7 @@ public class WorldStateQueryInstance {
             .filter(e -> !Objects.equals(e.getValue(), UInt256.ZERO))
             .forEach(e -> assets.put(
                     String.valueOf(
-                            e.getKey().slice(Byte.BYTES + ADDRESS_SIZE, Long.BYTES).toLong()),
+                            e.getKey().slice(ADDRESS_SIZE + Byte.BYTES, Long.BYTES).toLong()),
                     e.getValue().toLong()));
     // remove asset = 0
     assets.entrySet().removeIf(e -> e.getValue() <= 0);
