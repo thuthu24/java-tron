@@ -64,8 +64,6 @@ public class MetricKeys {
     public static final String BLOCK_RECEIVE_DELAY = "tron:block_receive_delay_seconds";
     public static final String TRON_STATE_PUT_PER_TRANS_LATENCY =
         "tron:state_put_per_trans_latency_seconds";
-    public static final String TRON_STATE_PUT_LATENCY =
-        "tron:state_put_latency_seconds";
     public static final String STATE_PUSH_BLOCK_FINISH_LATENCY =
         "tron:state_push_block_finish_latency_seconds";
 

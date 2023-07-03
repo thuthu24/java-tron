@@ -9,6 +9,7 @@ import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.besu.ethereum.trie.MerkleStorage;
 import org.junit.After;
 import org.junit.Assert;
@@ -62,8 +63,9 @@ public class WorldStateQueryInstanceTest {
   private static ChainBaseManager chainBaseManager;
   private static MerkleStorage merkleStorage;
 
-  private static final ECKey ecKey = new ECKey(Utils.getRandom());
-  private static final byte[] address = ecKey.getAddress();
+  private static final byte[] from = new ECKey(Utils.getRandom()).getAddress();
+
+  private static final byte[] to = new ECKey(Utils.getRandom()).getAddress();
 
   @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -105,8 +107,8 @@ public class WorldStateQueryInstanceTest {
   }
 
   private void testGetAccount() {
-    byte[] key = address;
-    byte[] value = Protocol.Account.newBuilder().setAddress(ByteString.copyFrom(address)).build()
+    byte[] key = from;
+    byte[] value = Protocol.Account.newBuilder().setAddress(ByteString.copyFrom(from)).build()
             .toByteArray();
     trieImpl2.put(StateType.encodeKey(StateType.Account, key), Bytes.wrap(value));
     trieImpl2.commit();
@@ -125,67 +127,68 @@ public class WorldStateQueryInstanceTest {
     long amount = 100;
     trieImpl2.put(
             fix32(StateType.encodeKey(StateType.AccountAsset,
-                    com.google.common.primitives.Bytes.concat(address,
+                    com.google.common.primitives.Bytes.concat(from,
                             Longs.toByteArray(tokenId)))), Bytes.of(Longs.toByteArray(amount)));
     trieImpl2.commit();
     trieImpl2.flush();
     byte[] root = trieImpl2.getRootHash();
     instance = new WorldStateQueryInstance(Bytes32.wrap(root), chainBaseManager);
     Assert.assertEquals(amount, instance.getAccountAsset(
-            Protocol.Account.newBuilder().setAddress(ByteString.copyFrom(address)).build(),
+            Protocol.Account.newBuilder().setAddress(ByteString.copyFrom(from)).build(),
             tokenId));
     Assert.assertEquals(instance.getRootHash(),trieImpl2.getRootHashByte32());
     trieImpl2.put(
             fix32(StateType.encodeKey(StateType.AccountAsset,
                     com.google.common.primitives.Bytes.concat(
-                            address, Longs.toByteArray(tokenId)))), UInt256.ZERO);
+                        from, Longs.toByteArray(tokenId)))), UInt256.ZERO);
     trieImpl2.commit();
     trieImpl2.flush();
     instance = new WorldStateQueryInstance(trieImpl2.getRootHashByte32(),
             chainBaseManager);
     Assert.assertEquals(0, instance.getAccountAsset(
-            Protocol.Account.newBuilder().setAddress(ByteString.copyFrom(address)).build(),
+            Protocol.Account.newBuilder().setAddress(ByteString.copyFrom(from)).build(),
             tokenId));
     Assert.assertFalse(instance.hasAssetV2(
-            Protocol.Account.newBuilder().setAddress(ByteString.copyFrom(address)).build(),
+            Protocol.Account.newBuilder().setAddress(ByteString.copyFrom(from)).build(),
             tokenId));
 
   }
 
   private void testGetContractState() {
     byte[] value = new ContractStateCapsule(1).getData();
-    trieImpl2.put(StateType.encodeKey(StateType.ContractState, address), Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.ContractState, from), Bytes.wrap(value));
     trieImpl2.commit();
     trieImpl2.flush();
     byte[] root = trieImpl2.getRootHash();
     instance = new WorldStateQueryInstance(Bytes32.wrap(root), chainBaseManager);
-    Assert.assertArrayEquals(value, instance.getContractState(address).getData());
+    Assert.assertArrayEquals(value, instance.getContractState(from).getData());
   }
 
   private void testGetContract() {
     byte[] value = new ContractCapsule(SmartContractOuterClass.SmartContract.newBuilder()
-            .setContractAddress(ByteString.copyFrom(address)).build()).getData();
-    trieImpl2.put(StateType.encodeKey(StateType.Contract, address), Bytes.wrap(value));
+            .setContractAddress(ByteString.copyFrom(from)).build()).getData();
+    trieImpl2.put(StateType.encodeKey(StateType.Contract, from), Bytes.wrap(value));
     trieImpl2.commit();
     trieImpl2.flush();
     byte[] root = trieImpl2.getRootHash();
     instance = new WorldStateQueryInstance(Bytes32.wrap(root), chainBaseManager);
-    Assert.assertArrayEquals(value, instance.getContract(address).getData());
+    Assert.assertArrayEquals(value, instance.getContract(from).getData());
   }
 
   private void testGetCode() {
     byte[] value = new CodeCapsule("code".getBytes()).getData();
-    trieImpl2.put(StateType.encodeKey(StateType.Code, address), Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.Code, from), Bytes.wrap(value));
     trieImpl2.commit();
     trieImpl2.flush();
     byte[] root = trieImpl2.getRootHash();
     instance = new WorldStateQueryInstance(Bytes32.wrap(root), chainBaseManager);
-    Assert.assertArrayEquals(value, instance.getCode(address).getData());
+    Assert.assertArrayEquals(value, instance.getCode(from).getData());
   }
 
   private void testGetAssetIssue() {
     String tokenId = "100001";
-    byte[] value = new AssetIssueCapsule(address, tokenId, "token1", "test", 100, 100).getData();
+    byte[] value = new AssetIssueCapsule(from, tokenId, "token1", "test", 100,
+        100).getData();
     trieImpl2.put(StateType.encodeKey(StateType.AssetIssue, tokenId.getBytes()), Bytes.wrap(value));
     trieImpl2.commit();
     trieImpl2.flush();
@@ -199,61 +202,112 @@ public class WorldStateQueryInstanceTest {
   }
 
   private void testGetWitness() {
-    byte[] value = new WitnessCapsule(ByteString.copyFrom(ecKey.getPubKey()), "http://").getData();
-    trieImpl2.put(StateType.encodeKey(StateType.Witness, address), Bytes.wrap(value));
+    byte[] value = new WitnessCapsule(ByteString.copyFrom(new ECKey(Utils.getRandom()).getPubKey()),
+        "http://").getData();
+    trieImpl2.put(StateType.encodeKey(StateType.Witness, from), Bytes.wrap(value));
     trieImpl2.commit();
     trieImpl2.flush();
     byte[] root = trieImpl2.getRootHash();
     instance = new WorldStateQueryInstance(Bytes32.wrap(root), chainBaseManager);
-    Assert.assertArrayEquals(value, instance.getWitness(address).getData());
+    Assert.assertArrayEquals(value, instance.getWitness(from).getData());
   }
 
   private void testGetDelegatedResource() {
-    byte[] value = new DelegatedResourceCapsule(ByteString.copyFrom(address),
-            ByteString.copyFrom(address)).getData();
-    byte[] key = DelegatedResourceCapsule.createDbKey(address, address);
+    byte[] value = new DelegatedResourceCapsule(ByteString.copyFrom(from),
+            ByteString.copyFrom(to)).getData();
+    byte[] key = DelegatedResourceCapsule.createDbKey(from, to);
+    byte[] key2 = DelegatedResourceCapsule.createDbKeyV2(from, to, true);
+    byte[] key3 = DelegatedResourceCapsule.createDbKeyV2(from, to, false);
     trieImpl2.put(StateType.encodeKey(StateType.DelegatedResource, key), Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.DelegatedResource, key2), Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.DelegatedResource, key3), Bytes.wrap(value));
     trieImpl2.commit();
     trieImpl2.flush();
     byte[] root = trieImpl2.getRootHash();
     instance = new WorldStateQueryInstance(Bytes32.wrap(root), chainBaseManager);
     Assert.assertArrayEquals(value, instance.getDelegatedResource(key).getData());
+    Assert.assertArrayEquals(value, instance.getDelegatedResource(key2).getData());
+    Assert.assertArrayEquals(value, instance.getDelegatedResource(key3).getData());
   }
 
   private void testGetDelegation() {
-    byte[] value = "test".getBytes();
-    byte[] key = address;
-    trieImpl2.put(StateType.encodeKey(StateType.Delegation, address), Bytes.wrap(value));
+    byte[] value = Longs.toByteArray(100);
+    byte[] key = from;
+    trieImpl2.put(StateType.encodeKey(StateType.Delegation, from), Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.Delegation,
+        ("end-" + Hex.toHexString(from)).getBytes()), Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.Delegation,
+        (100 + "-" + Hex.toHexString(from) + "-vote").getBytes()), Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.Delegation,
+        (-1 + "-" + Hex.toHexString(from) + "-reward").getBytes()), Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.Delegation,
+        (100 + "-" + Hex.toHexString(from) + "-account-vote").getBytes()), Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.Delegation,
+        (100 + "-" + Hex.toHexString(from) + "-brokerage").getBytes()), Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.Delegation,
+        (100 + "-" + Hex.toHexString(from) + "-vi").getBytes()), Bytes.wrap(value));
     trieImpl2.commit();
     trieImpl2.flush();
     byte[] root = trieImpl2.getRootHash();
     instance = new WorldStateQueryInstance(Bytes32.wrap(root), chainBaseManager);
     try (DelegationStateStore store = new DelegationStateStore(instance)) {
       Assert.assertArrayEquals(value, store.get(key).getData());
+      Assert.assertArrayEquals(value,
+          store.get(("end-" + Hex.toHexString(from)).getBytes()).getData());
+      Assert.assertArrayEquals(value,
+          store.get( (100 + "-" + Hex.toHexString(from) + "-vote").getBytes()).getData());
+      Assert.assertArrayEquals(value,
+          store.get( (-1 + "-" + Hex.toHexString(from) + "-reward").getBytes()).getData());
+      Assert.assertArrayEquals(value,
+          store.get( (100 + "-" + Hex.toHexString(from) + "-account-vote").getBytes()).getData());
+      Assert.assertArrayEquals(value,
+          store.get( (100 + "-" + Hex.toHexString(from) + "-brokerage").getBytes()).getData());
+      Assert.assertArrayEquals(value,
+          store.get( (100 + "-" + Hex.toHexString(from) + "-vi").getBytes()).getData());
       testUnsupportedOperation(store, key);
       Assert.assertEquals(store.getDbName(),(Bytes32.wrap(root).toHexString()));
     }
   }
 
   private void testGetDelegatedResourceAccountIndex() {
-    byte[] value = new DelegatedResourceAccountIndexCapsule(ByteString.copyFrom(address)).getData();
-    trieImpl2.put(StateType.encodeKey(StateType.DelegatedResourceAccountIndex, address),
+    byte[] value = new DelegatedResourceAccountIndexCapsule(ByteString.copyFrom(from)).getData();
+    trieImpl2.put(StateType.encodeKey(StateType.DelegatedResourceAccountIndex,
+            com.google.common.primitives.Bytes.concat(new byte[]{0x01}, from, to)),
             Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.DelegatedResourceAccountIndex,
+            com.google.common.primitives.Bytes.concat(new byte[]{0x02}, to, from)),
+        Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.DelegatedResourceAccountIndex,
+            com.google.common.primitives.Bytes.concat(new byte[]{0x03}, from, to)),
+        Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.DelegatedResourceAccountIndex,
+            com.google.common.primitives.Bytes.concat(new byte[]{0x04}, to, from)),
+        Bytes.wrap(value));
+    trieImpl2.put(StateType.encodeKey(StateType.DelegatedResourceAccountIndex, from),
+        Bytes.wrap(value));
     trieImpl2.commit();
     trieImpl2.flush();
     byte[] root = trieImpl2.getRootHash();
     instance = new WorldStateQueryInstance(Bytes32.wrap(root), chainBaseManager);
-    Assert.assertArrayEquals(value, instance.getDelegatedResourceAccountIndex(address).getData());
+    Assert.assertArrayEquals(value, instance.getDelegatedResourceAccountIndex(
+        com.google.common.primitives.Bytes.concat(new byte[]{0x01}, from, to)).getData());
+    Assert.assertArrayEquals(value, instance.getDelegatedResourceAccountIndex(
+        com.google.common.primitives.Bytes.concat(new byte[]{0x02}, to, from)).getData());
+    Assert.assertArrayEquals(value, instance.getDelegatedResourceAccountIndex(
+        com.google.common.primitives.Bytes.concat(new byte[]{0x03}, from, to)).getData());
+    Assert.assertArrayEquals(value, instance.getDelegatedResourceAccountIndex(
+        com.google.common.primitives.Bytes.concat(new byte[]{0x04}, to, from)).getData());
+    Assert.assertArrayEquals(value, instance.getDelegatedResourceAccountIndex(from).getData());
   }
 
   private void testGetVotes() {
-    byte[] value = new VotesCapsule(ByteString.copyFrom(address), Lists.newArrayList()).getData();
-    trieImpl2.put(StateType.encodeKey(StateType.Votes, address), Bytes.wrap(value));
+    byte[] value = new VotesCapsule(ByteString.copyFrom(from), Lists.newArrayList()).getData();
+    trieImpl2.put(StateType.encodeKey(StateType.Votes, from), Bytes.wrap(value));
     trieImpl2.commit();
     trieImpl2.flush();
     byte[] root = trieImpl2.getRootHash();
     instance = new WorldStateQueryInstance(Bytes32.wrap(root), chainBaseManager);
-    Assert.assertArrayEquals(value, instance.getVotes(address).getData());
+    Assert.assertArrayEquals(value, instance.getVotes(from).getData());
   }
 
   private void testGetDynamicProperty() {
@@ -284,7 +338,7 @@ public class WorldStateQueryInstanceTest {
 
   private void testGetStorageRow() {
     trieImpl2 = new TrieImpl2(merkleStorage);
-    byte[] key = address;
+    byte[] key = from;
     byte[] value = "test".getBytes();
     trieImpl2.put(StateType.encodeKey(StateType.StorageRow, key), Bytes.wrap(value));
     trieImpl2.commit();
@@ -296,7 +350,7 @@ public class WorldStateQueryInstanceTest {
       testUnsupportedOperation(store, key);
       Assert.assertEquals(store.getDbName(), Bytes32.wrap(root).toHexString());
       try {
-        Storage storage = new Storage(address, store);
+        Storage storage = new Storage(from, store);
         storage.put(new DataWord(0), new DataWord(0));
         storage.commit();
         Assert.fail();
@@ -313,7 +367,8 @@ public class WorldStateQueryInstanceTest {
     } catch (UnsupportedOperationException e) {
       Assert.assertTrue(true);
     }
-    Assert.assertFalse(store.has("not-key".getBytes()));
+    Assert.assertFalse(store.has(("end-"
+        + Hex.toHexString(new ECKey(Utils.getRandom()).getAddress())).getBytes()));
 
     try {
       store.delete(key);
