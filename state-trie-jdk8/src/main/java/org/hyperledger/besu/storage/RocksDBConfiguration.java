@@ -84,4 +84,19 @@ public class RocksDBConfiguration {
   public boolean isCacheIndexAndFilter() {
     return cacheIndexAndFilter;
   }
+
+  @Override
+  public String toString() {
+    return "{"
+        + "databaseDir=" + databaseDir
+        + ", maxOpenFiles=" + maxOpenFiles
+        + ", label='" + label + '\''
+        + ", maxBackgroundCompactions=" + maxBackgroundCompactions
+        + ", backgroundThreadCount=" + backgroundThreadCount
+        + ", cacheCapacity=" + cacheCapacity
+        + ", writeBufferSize=" + writeBufferSize
+        + ", isHighSpec=" + isHighSpec
+        + ", cacheIndexAndFilter=" + cacheIndexAndFilter
+        + '}';
+  }
 }

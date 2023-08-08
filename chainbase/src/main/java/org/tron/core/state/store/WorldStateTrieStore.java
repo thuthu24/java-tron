@@ -60,8 +60,10 @@ public class WorldStateTrieStore extends RocksDBKeyValueStorage implements Stat 
           stateGenesis).toString();
     }
     FileUtil.createDirIfNotExists(stateGenesis);
-    return CommonParameter.getInstance().getStorage().getStateDbConf()
+    RocksDBConfiguration conf = CommonParameter.getInstance().getStorage().getStateDbConf()
             .databaseDir(Paths.get(stateGenesis, dbName)).build();
+    logger.info("WorldStateTrieStore config: {}", conf);
+    return conf;
   }
 
   @Override
