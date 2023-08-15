@@ -10,7 +10,6 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.util.Objects;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -74,6 +73,8 @@ import org.tron.api.WalletExtensionGrpc;
 import org.tron.api.WalletGrpc.WalletImplBase;
 import org.tron.api.WalletSolidityGrpc.WalletSolidityImplBase;
 import org.tron.common.application.RpcService;
+import org.tron.common.application.Service;
+import org.tron.common.es.ExecutorServiceManager;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Sha256Hash;
@@ -200,6 +201,8 @@ public class RpcApiService extends RpcService {
   @Getter
   private MonitorApi monitorApi = new MonitorApi();
 
+  private final String executorName = "rpc-pbft-executor";
+
   @Override
   public void init() {
 
@@ -216,7 +219,9 @@ public class RpcApiService extends RpcService {
     CommonParameter parameter = Args.getInstance();
     if (parameter.getRpcThreadNum() > 0) {
       serverBuilder = serverBuilder
-          .executor(Executors.newFixedThreadPool(parameter.getRpcThreadNum()));
+          .executor(ExecutorServiceManager.newFixedThreadPool(
+              executorName, parameter.getRpcThreadNum()));
+    }
     }
     if (parameter.isSolidityNode()) {
       serverBuilder = serverBuilder.addService(walletSolidityApi);
