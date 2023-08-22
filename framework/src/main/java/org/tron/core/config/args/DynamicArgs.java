@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.tron.common.parameter.CommonParameter;
@@ -28,6 +29,7 @@ public class DynamicArgs {
 
   private ScheduledExecutorService reloadExecutor = Executors.newSingleThreadScheduledExecutor();
 
+  @PostConstruct
   public void init() {
     if (parameter.isDynamicConfigEnable()) {
       logger.info("Start the dynamic loading configuration service");
@@ -107,6 +109,7 @@ public class DynamicArgs {
         TronNetService.getP2pConfig().getTrustNodes().toString());
   }
 
+  @PreDestroy
   public void close() {
     logger.info("Closing the dynamic loading configuration service");
     reloadExecutor.shutdown();
