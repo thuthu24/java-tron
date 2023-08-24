@@ -73,7 +73,6 @@ import org.tron.api.WalletExtensionGrpc;
 import org.tron.api.WalletGrpc.WalletImplBase;
 import org.tron.api.WalletSolidityGrpc.WalletSolidityImplBase;
 import org.tron.common.application.RpcService;
-import org.tron.common.application.Service;
 import org.tron.common.es.ExecutorServiceManager;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.utils.ByteArray;
@@ -221,7 +220,6 @@ public class RpcApiService extends RpcService {
       serverBuilder = serverBuilder
           .executor(ExecutorServiceManager.newFixedThreadPool(
               executorName, parameter.getRpcThreadNum()));
-    }
     }
     if (parameter.isSolidityNode()) {
       serverBuilder = serverBuilder.addService(walletSolidityApi);

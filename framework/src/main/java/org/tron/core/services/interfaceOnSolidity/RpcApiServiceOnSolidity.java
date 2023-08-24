@@ -3,7 +3,6 @@ package org.tron.core.services.interfaceOnSolidity;
 import com.google.protobuf.ByteString;
 import io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
