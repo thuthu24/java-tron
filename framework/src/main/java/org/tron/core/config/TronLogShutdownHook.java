@@ -20,6 +20,8 @@ public class TronLogShutdownHook extends ShutdownHookBase {
    */
   private final long  check_times = 60 * 1000 / CHECK_SHUTDOWN_DELAY.getMilliseconds();
 
+  public static volatile boolean shutDown = true;
+
   public TronLogShutdownHook() {
   }
 
@@ -27,7 +29,7 @@ public class TronLogShutdownHook extends ShutdownHookBase {
   public void run() {
     try {
       for (int i = 0; i < check_times; i++) {
-        if (FullNode.shutDownSign) {
+        if (shutDown) {
           break;
         }
         addInfo("Sleeping for " + CHECK_SHUTDOWN_DELAY);
