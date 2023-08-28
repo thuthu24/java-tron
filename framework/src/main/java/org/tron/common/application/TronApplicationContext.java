@@ -28,6 +28,7 @@ public class TronApplicationContext extends AnnotationConfigApplicationContext {
     appT.shutdown();
     super.doClose();
     logger.info("******** close end ********");
+    TronLogShutdownHook.shutDown = true;
   }
 
   @Override
