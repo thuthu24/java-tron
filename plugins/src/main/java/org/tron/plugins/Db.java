@@ -24,6 +24,7 @@ import picocli.CommandLine;
         DbBlockStats.class,
         DbRewardScan.class,
         DbBlockRewardScan.class,
+        DbRewardCacheScan.class,
         DbTrim.class,
         DbRoot.class
     },
