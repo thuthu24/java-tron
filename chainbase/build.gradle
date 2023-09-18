@@ -12,6 +12,7 @@ dependencies {
     compile project(":crypto")
     compile "org.fusesource.jansi:jansi:$jansiVersion"
     compile 'io.github.tronprotocol:zksnark-java-sdk:1.0.0'
+    compile project(":state-trie-jdk8")
     compile 'org.reflections:reflections:0.9.11'
 }
 
