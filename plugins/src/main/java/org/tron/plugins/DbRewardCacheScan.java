@@ -52,13 +52,13 @@ public class DbRewardCacheScan implements Callable<Integer> {
   public int queryRewardCache() throws IOException {
     AtomicLong cnt = new AtomicLong();
     try (DBIterator iterator = rewardCache.iterator()) {
-      iterator.seekToFirst();
+      iterator.seek(new byte[]{0x41});
       byte[] start = iterator.getKey();
       iterator.seekToLast();
       byte[] end = iterator.getKey();
       spec.commandLine().getOut().println(String.format("start: %s, end: %s",
           ByteArray.toHexString(start), ByteArray.toHexString(end)));
-      iterator.seekToFirst();
+      iterator.seek(new byte[]{0x41});
       iterator.forEachRemaining(e -> {
         byte[] address = new byte[21];
         System.arraycopy(e.getKey(), 0, address, 0, 21);
