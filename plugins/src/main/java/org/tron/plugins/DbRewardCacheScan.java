@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
+
+import com.google.common.primitives.Longs;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.plugins.utils.ByteArray;
 import org.tron.plugins.utils.db.DBInterface;
@@ -62,10 +64,13 @@ public class DbRewardCacheScan implements Callable<Integer> {
       iterator.forEachRemaining(e -> {
         byte[] address = new byte[21];
         System.arraycopy(e.getKey(), 0, address, 0, 21);
+        byte[] cycleBytes = new byte[8];
+        System.arraycopy(e.getKey(), 21, cycleBytes, 0, 8);
+        long cycle = Longs.fromByteArray(cycleBytes);
         long reward = ByteArray.toLong(e.getValue());
         cnt.getAndIncrement();
-        spec.commandLine().getOut().println(String.format("address: %s, reward: %d",
-            ByteArray.toHexString(address), reward));
+        spec.commandLine().getOut().println(String.format("address: %s, cycle: %d, reward: %d",
+            ByteArray.toHexString(address), cycle, reward));
       });
     }
     spec.commandLine().getOut().println(String.format("total: %d", cnt.get()));
