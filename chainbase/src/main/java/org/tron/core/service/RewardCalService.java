@@ -1,7 +1,6 @@
 package org.tron.core.service;
 
 import com.google.common.primitives.Bytes;
-import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.prometheus.client.Histogram;
@@ -143,7 +142,7 @@ public class RewardCalService {
     long reward = LongStream.range(beginCycle, newRewardCalStartCycle)
         .map(i -> computeReward(i, account))
         .sum();
-    rewardCacheStore.putReward(Bytes.concat(address, Longs.toByteArray(beginCycle)), reward);
+    putReward(address, beginCycle, reward);
     Metrics.histogramObserve(requestTimer);
   }
 
@@ -180,6 +179,14 @@ public class RewardCalService {
   }
 
   public long getReward(byte[] address, long cycle) {
-    return rewardCacheStore.getReward(Bytes.concat(address, Longs.toByteArray(cycle)));
+    return rewardCacheStore.getReward(buildKey(address, cycle));
+  }
+
+  private void putReward(byte[] address, long cycle, long reward) {
+    rewardCacheStore.putReward(buildKey(address, cycle), reward);
+  }
+
+  private byte[] buildKey(byte[] address, long beginCycle) {
+    return Bytes.concat(address, ByteArray.fromLong(beginCycle));
   }
 }

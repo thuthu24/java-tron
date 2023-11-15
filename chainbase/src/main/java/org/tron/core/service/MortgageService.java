@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import java.math.BigInteger;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.LongStream;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +41,6 @@ public class MortgageService {
 
   @Autowired
   private RewardCalService rewardCalService;
-
 
   public void initStore(WitnessStore witnessStore, DelegationStore delegationStore,
       DynamicPropertiesStore dynamicPropertiesStore, AccountStore accountStore) {
@@ -243,16 +243,15 @@ public class MortgageService {
   }
 
   private long getOldReward(long beginCycle, long oldEndCycle, AccountCapsule accountCapsule) {
+    if (beginCycle + 1 == oldEndCycle) {
+      return rewardCalService.computeReward(beginCycle, accountCapsule.getInstance());
+    }
     long cacheData = rewardCalService.getReward(accountCapsule.createDbKey(), beginCycle);
-    long reward = 0;
-    for (long cycle = beginCycle; cycle < oldEndCycle; cycle++) {
-      reward += rewardCalService.computeReward(cycle, accountCapsule.getInstance());
+    if (cacheData != -1) {
+      return cacheData;
     }
-    if (cacheData != -1 && cacheData != reward) {
-      logger.error("Old reward algorithm reward not equal, address {}, beginCycle {}, "
-          + "oldEndCycle {}, cacheData {}, reward {}.", accountCapsule.createReadableString(),
-          beginCycle, oldEndCycle, cacheData, reward);
-    }
-    return reward;
+    return LongStream.range(beginCycle, oldEndCycle)
+        .map(i -> rewardCalService.computeReward(i, accountCapsule.getInstance()))
+        .sum();
   }
 }
