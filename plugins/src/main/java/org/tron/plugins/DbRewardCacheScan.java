@@ -69,7 +69,7 @@ public class DbRewardCacheScan implements Callable<Integer> {
         long cycle = Longs.fromByteArray(cycleBytes);
         long reward = ByteArray.toLong(e.getValue());
         cnt.getAndIncrement();
-        spec.commandLine().getOut().println(String.format("address: %s, cycle: %d, reward: %d",
+        spec.commandLine().getOut().println(String.format("%s,%d,%d",
             ByteArray.toHexString(address), cycle, reward));
       });
     }
