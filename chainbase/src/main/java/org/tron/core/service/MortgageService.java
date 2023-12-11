@@ -9,7 +9,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.common.utils.StringUtil;
 import org.tron.core.capsule.AccountCapsule;
@@ -37,10 +36,6 @@ public class MortgageService {
 
   @Setter
   private AccountStore accountStore;
-
-  @Autowired
-  private RewardCalService rewardCalService;
-
 
   public void initStore(WitnessStore witnessStore, DelegationStore delegationStore,
       DynamicPropertiesStore dynamicPropertiesStore, AccountStore accountStore) {
@@ -204,7 +199,9 @@ public class MortgageService {
     long newAlgorithmCycle = dynamicPropertiesStore.getNewRewardAlgorithmEffectiveCycle();
     if (beginCycle < newAlgorithmCycle) {
       long oldEndCycle = Math.min(endCycle, newAlgorithmCycle);
-      reward = getOldReward(beginCycle, oldEndCycle, accountCapsule);
+      for (long cycle = beginCycle; cycle < oldEndCycle; cycle++) {
+        reward += computeReward(cycle, accountCapsule);
+      }
       beginCycle = oldEndCycle;
     }
     if (beginCycle < endCycle) {
@@ -259,22 +256,5 @@ public class MortgageService {
   private void sortWitness(List<ByteString> list) {
     list.sort(Comparator.comparingLong((ByteString b) -> getWitnessByAddress(b).getVoteCount())
         .reversed().thenComparing(Comparator.comparingInt(ByteString::hashCode).reversed()));
-  }
-
-  private long getOldReward(long beginCycle, long oldEndCycle, AccountCapsule accountCapsule) {
-    if (beginCycle + 1 == oldEndCycle) {
-      return computeReward(beginCycle, accountCapsule);
-    }
-    long cacheData = rewardCalService.getRewardCache(accountCapsule.createDbKey(), beginCycle);
-    long reward = 0;
-    for (long cycle = beginCycle; cycle < oldEndCycle; cycle++) {
-      reward += computeReward(cycle, accountCapsule);
-    }
-    if (cacheData != -1 && cacheData != reward) {
-      logger.error("Old reward algorithm reward not equal, address {}, beginCycle {}, "
-          + "oldEndCycle {}, cacheData {}, reward {}.", accountCapsule.createReadableString(),
-          beginCycle, oldEndCycle, cacheData, reward);
-    }
-    return reward;
   }
 }
