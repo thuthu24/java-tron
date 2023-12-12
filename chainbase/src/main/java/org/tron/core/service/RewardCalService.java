@@ -2,7 +2,6 @@ package org.tron.core.service;
 
 import static org.tron.core.store.DelegationStore.REMARK;
 
-import com.google.common.primitives.Bytes;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.prometheus.client.Histogram;
 import java.io.IOException;
@@ -195,10 +194,6 @@ public class RewardCalService {
     rows.put(generateKey(cycle, address, "reward"), ByteArray.fromLong(reward));
     rows.put(generateKey(cycle, address, "vote"), ByteArray.fromLong(vote));
     rewardCacheStore.updateByBatch(rows);
-  }
-
-  private byte[] buildKey(byte[] address, long beginCycle) {
-    return Bytes.concat(address, ByteArray.fromLong(beginCycle));
   }
 
   private long getBeginCycle(byte[] address) {

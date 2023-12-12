@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.common.utils.StringUtil;
 import org.tron.core.capsule.AccountCapsule;
@@ -36,6 +37,9 @@ public class MortgageService {
 
   @Setter
   private AccountStore accountStore;
+
+  @Autowired
+  private RewardCalService rewardCalService;
 
   public void initStore(WitnessStore witnessStore, DelegationStore delegationStore,
       DynamicPropertiesStore dynamicPropertiesStore, AccountStore accountStore) {
@@ -166,8 +170,11 @@ public class MortgageService {
     long reward = 0;
     for (Vote vote : accountCapsule.getVotesList()) {
       byte[] srAddress = vote.getVoteAddress().toByteArray();
-      long totalReward = delegationStore.getReward(cycle, srAddress);
-      long totalVote = delegationStore.getWitnessVote(cycle, srAddress);
+      long totalReward = this.getWitnessReward(cycle, srAddress);
+      if (totalReward == 0) {
+        continue;
+      }
+      long totalVote = this.getWitnessVote(cycle, srAddress);
       if (totalVote == DelegationStore.REMARK || totalVote == 0) {
         continue;
       }
@@ -179,6 +186,22 @@ public class MortgageService {
           userVote, totalVote, totalReward, reward);
     }
     return reward;
+  }
+
+  private long getWitnessReward(long cycle, byte[] address) {
+    long v = rewardCalService.getRewardCache(address, cycle);
+    if (DelegationStore.REMARK == v) {
+      v = delegationStore.getReward(cycle, address);
+    }
+    return v;
+  }
+
+  private long getWitnessVote(long cycle, byte[] address) {
+    long v = rewardCalService.getVoteCache(address, cycle);
+    if (DelegationStore.REMARK == v) {
+      v = delegationStore.getWitnessVote(cycle, address);
+    }
+    return v;
   }
 
   /**
