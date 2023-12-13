@@ -38,6 +38,8 @@ dependencies {
     // https://mvnrepository.com/artifact/org.xerial.snappy/snappy-java
     compile group: 'org.xerial.snappy', name: 'snappy-java', version: '1.1.8.4'
     compile 'commons-io:commons-io:2.11.0'
+    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.12.0'
+
     compile project(":protocol")
     compile project(":state-trie-jdk8")
 }
