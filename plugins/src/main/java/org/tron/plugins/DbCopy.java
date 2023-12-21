@@ -35,6 +35,10 @@ public class DbCopy implements Callable<Integer> {
       description = "Output path. Default: ${DEFAULT-VALUE}")
   private File dest;
 
+  @CommandLine.Option(names = { "--dbs"},
+      description = "db for cp")
+  private List<String> dbs;
+
   @CommandLine.Option(names = {"-h", "--help"})
   private boolean help;
 
@@ -65,34 +69,37 @@ public class DbCopy implements Callable<Integer> {
       return 403;
     }
 
-    List<File> files = Arrays.stream(Objects.requireNonNull(src.listFiles()))
-        .filter(File::isDirectory)
-        .filter(e -> !DBUtils.CHECKPOINT_DB_V2.equals(e.getName()))
-        .collect(Collectors.toList());
-
-    // add checkpoint v2 convert
-    File cpV2Dir = new File(Paths.get(src.toString(), DBUtils.CHECKPOINT_DB_V2).toString());
-    List<File> cpList = new ArrayList<>();
-    if (cpV2Dir.exists()) {
-      cpList = Arrays.stream(Objects.requireNonNull(cpV2Dir.listFiles()))
-          .filter(File::isDirectory)
-          .collect(Collectors.toList());
-    }
-
-    if (files.isEmpty()) {
-      logger.info("{} does not contain any database.", src);
-      spec.commandLine().getOut().format("%s does not contain any database.", src).println();
-      return 0;
-    }
     final long time = System.currentTimeMillis();
     List<Copier> services = new ArrayList<>();
-    files.forEach(f -> services.add(
-        new DbCopier(src.getPath(), dest.getPath(), f.getName())));
-    cpList.forEach(f -> services.add(
-        new DbCopier(
-            Paths.get(src.getPath(), DBUtils.CHECKPOINT_DB_V2).toString(),
-            Paths.get(dest.getPath(), DBUtils.CHECKPOINT_DB_V2).toString(),
-            f.getName())));
+    if (dbs == null || dbs.isEmpty()) {
+      List<File> files = Arrays.stream(Objects.requireNonNull(src.listFiles()))
+          .filter(File::isDirectory)
+          .filter(e -> !DBUtils.CHECKPOINT_DB_V2.equals(e.getName()))
+          .collect(Collectors.toList());
+      // add checkpoint v2 convert
+      File cpV2Dir = new File(Paths.get(src.toString(), DBUtils.CHECKPOINT_DB_V2).toString());
+      List<File> cpList = new ArrayList<>();
+      if (cpV2Dir.exists()) {
+        cpList = Arrays.stream(Objects.requireNonNull(cpV2Dir.listFiles()))
+            .filter(File::isDirectory)
+            .collect(Collectors.toList());
+      }
+      if (files.isEmpty()) {
+        logger.info("{} does not contain any database.", src);
+        spec.commandLine().getOut().format("%s does not contain any database.", src).println();
+        return 0;
+      }
+      files.forEach(f -> services.add(
+          new DbCopier(src.getPath(), dest.getPath(), f.getName())));
+      cpList.forEach(f -> services.add(
+          new DbCopier(
+              Paths.get(src.getPath(), DBUtils.CHECKPOINT_DB_V2).toString(),
+              Paths.get(dest.getPath(), DBUtils.CHECKPOINT_DB_V2).toString(),
+              f.getName())));
+    } else {
+      dbs.forEach(db -> services.add(
+          new DbCopier(src.getPath(), dest.getPath(), db)));
+    }
     List<String> fails = ProgressBar.wrap(services.stream(), "copy task").parallel().map(
         dbCopier -> {
           try {

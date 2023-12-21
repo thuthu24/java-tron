@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import me.tongfei.progressbar.ProgressBar;
 import org.rocksdb.RocksDBException;
+import org.tron.plugins.utils.ByteArray;
 import org.tron.plugins.utils.DBUtils;
 import org.tron.plugins.utils.db.DBInterface;
 import org.tron.plugins.utils.db.DBIterator;
@@ -38,9 +39,9 @@ public class DbMinCompare implements Callable<Integer> {
   @CommandLine.Parameters(index = "1",
       description = "input path for compare")
   private File compare;
-  @CommandLine.Option(names = { "--names"},
+  @CommandLine.Option(names = { "--dbs"},
        description = "db names for compare")
-  private List<String> names;
+  private List<String> dbs;
   @CommandLine.Option(names = {"-h", "--help"}, help = true, description = "display a help message")
   private boolean help;
 
@@ -77,10 +78,10 @@ public class DbMinCompare implements Callable<Integer> {
           .collect(Collectors.toList());
     }
     // filter names if set
-    if (names != null && !names.isEmpty()) {
-      files = files.stream().filter(o -> names.contains(o.getName())).collect(Collectors.toList());
+    if (dbs != null && !dbs.isEmpty()) {
+      files = files.stream().filter(o -> dbs.contains(o.getName())).collect(Collectors.toList());
       cpList = cpList.stream().filter(o ->
-          names.contains(o.getName())).collect(Collectors.toList());
+          dbs.contains(o.getName())).collect(Collectors.toList());
     }
 
     if (files.isEmpty() && cpList.isEmpty()) {
@@ -128,12 +129,7 @@ public class DbMinCompare implements Callable<Integer> {
     private final Path basePath;
     private final Path dstPath;
 
-    private long baseKeyCount = 0L;
-    private long dstKeyCount = 0L;
-    private long baseKeyCheckSum = 0L;
-    private long dstKeyCheckSum = 0L;
-    private long baseValueCheckSum = 0L;
-    private long dstValueCheckSum = 0L;
+    private long count = 0L;
 
     public DbComparison(Path srcDir, Path dstDir, String name) {
       this.dbName = name;
@@ -161,44 +157,26 @@ public class DbMinCompare implements Callable<Integer> {
 
         // check
         logger.info("compare database {} start", this.dbName);
-
-        CompletableFuture<Void> dest = CompletableFuture.runAsync(() -> {
-          for (dstIterator.seekToFirst(); dstIterator.hasNext(); dstIterator.next()) {
-            byte[] key = dstIterator.getKey();
-            byte[] value = dstIterator.getValue();
-            dstKeyCount++;
-            dstKeyCheckSum = byteArrayToIntWithOne(dstKeyCheckSum, key);
-            dstValueCheckSum = byteArrayToIntWithOne(dstValueCheckSum, value);
+        for (dstIterator.seekToFirst(), baseIterator.seekToFirst();
+             dstIterator.hasNext() && baseIterator.hasNext();
+             dstIterator.next(), baseIterator.next()) {
+          if (Arrays.equals(dstIterator.getKey(), baseIterator.getKey())
+              && Arrays.equals(dstIterator.getValue(), baseIterator.getValue())) {
+            count++;
+          } else {
+            logger.info("compare database {} find diff, key: {}", this.dbName,
+                ByteArray.toHexString(dstIterator.getKey()));
+            return false;
           }
-        });
-
-        CompletableFuture<Void> source = CompletableFuture.runAsync(() -> {
-          for (baseIterator.seekToFirst(); baseIterator.hasNext(); baseIterator.next()) {
-            byte[] key = baseIterator.getKey();
-            byte[] value = baseIterator.getValue();
-            baseKeyCount++;
-            baseKeyCheckSum = byteArrayToIntWithOne(baseKeyCheckSum, key);
-            baseValueCheckSum = byteArrayToIntWithOne(baseValueCheckSum, value);
-          }
-        });
-        CompletableFuture<Void> ret = CompletableFuture.allOf(dest, source);
-        ret.whenComplete((t, action) -> logger.info(
-            "Check database {} end,dstKeyCount {}, dstKeyCheckSum {}, dstValueCheckSum {},"
-                + "baseKeyCount {}, baseKeyCheckSum {}, baseValueCheckSum {}",
-            dbName, dstKeyCount, dstKeyCheckSum, dstValueCheckSum,
-            baseKeyCount, baseKeyCheckSum, baseValueCheckSum));
-        ret.join();
-        return dstKeyCount == baseKeyCount && dstKeyCheckSum == baseKeyCheckSum
-            && dstValueCheckSum == baseValueCheckSum;
+        }
+        if (dstIterator.hasNext() || baseIterator.hasNext()) {
+          logger.info("compare database {} find diff", this.dbName);
+          return false;
+        }
+        logger.info("compare database {} end, total {} records", this.dbName, count);
+        return true;
       }
     }
-  }
-
-  private static long byteArrayToIntWithOne(long sum, byte[] b) {
-    for (byte oneByte : b) {
-      sum += oneByte;
-    }
-    return sum;
   }
 
 }
