@@ -9,28 +9,28 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.hyperledger.besu.ethereum.trie.MerklePatriciaTrie;
+import org.hyperledger.besu.ethereum.trie.SimpleMerklePatriciaTrie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.tron.common.error.TronDBException;
 import org.tron.common.es.ExecutorServiceManager;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.storage.WriteOptionsWrapper;
+import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.FileUtil;
 import org.tron.common.utils.StorageUtils;
 import org.tron.core.db.RevokingDatabase;
@@ -417,6 +417,9 @@ public class SnapshotManager implements RevokingDatabase {
               .collect(HashMap::new, (m, k) -> m.put(k.getKey(), k.getValue()), HashMap::putAll),
           WriteOptionsWrapper.getInstance().sync(syncFlag));
 
+      // insert state trie
+      calculateStateRoot(batch);
+
     } catch (Exception e) {
       throw new TronDBException(e);
     } finally {
@@ -424,6 +427,39 @@ public class SnapshotManager implements RevokingDatabase {
         checkPointStore.close();
       }
     }
+  }
+
+  private void calculateStateRoot(Map<WrappedByteArray, WrappedByteArray> batch) {
+    AtomicLong height = new AtomicLong(-1);
+    MerklePatriciaTrie<org.apache.tuweni.bytes.Bytes, org.apache.tuweni.bytes.Bytes> root
+        = new SimpleMerklePatriciaTrie<>(Function.identity());
+    Map<String, MerklePatriciaTrie<org.apache.tuweni.bytes.Bytes, org.apache.tuweni.bytes.Bytes>>
+        trieMap = new HashMap<>();
+    batch.forEach((k, v) -> {
+      org.apache.tuweni.bytes.Bytes key = org.apache.tuweni.bytes.Bytes.wrap(k.getBytes());
+      org.apache.tuweni.bytes.Bytes value = org.apache.tuweni.bytes.Bytes.wrap(v.getBytes());
+      String dbName = simpleDecode(k.getBytes());
+      if (StateType.get(dbName) == StateType.UNDEFINED) {
+        return;
+      }
+      trieMap.computeIfAbsent(dbName, s -> new SimpleMerklePatriciaTrie<>(Function.identity()))
+          .put(key, value);
+      root.put(key, value);
+      if (height.get() == -1 && "properties".equalsIgnoreCase(dbName)
+          && Arrays.equals(Bytes.concat(simpleEncode("properties"),
+          "latest_block_header_number".getBytes()), k.getBytes())) {
+        height.set(ByteArray.toLong(v.getBytes()));
+      }
+    });
+    StringBuilder sb = new StringBuilder();
+    sb.append("state-").append(height.get()).append(": ").append(root.getRootHash()).append(" ");
+    sb.append("{");
+    trieMap.entrySet().stream().sorted(Map.Entry.comparingByKey())
+        .forEach(e -> sb.append(e.getKey()).append(":").append(e.getValue().getRootHash())
+            .append(","));
+    sb.deleteCharAt(sb.length() - 1);
+    sb.append("}");
+    logger.info("{}", sb);
   }
 
   private TronDatabase<byte[]> getCheckpointDB(String dbName) {
