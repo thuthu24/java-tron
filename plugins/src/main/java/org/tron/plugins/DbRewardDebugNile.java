@@ -34,6 +34,9 @@ public class DbRewardDebugNile implements Callable<Integer> {
   @CommandLine.Option(names = {"--cycle"})
   private int cycle = -1;
 
+  @CommandLine.Option(names = {"--sr"})
+  private String sr = "412DA8912B9A05CBB3D43E16FFFF1C660920D36AC7";
+
   private DBInterface delegationStore;
 
   private static final BigInteger DECIMAL_OF_VI_REWARD = BigInteger.valueOf(10).pow(18);
@@ -56,7 +59,7 @@ public class DbRewardDebugNile implements Callable<Integer> {
   }
 
   private int calSrVi() {
-    accumulateWitnessReward(ByteArray.fromHexString("412DA8912B9A05CBB3D43E16FFFF1C660920D36AC7"));
+    accumulateWitnessReward(ByteArray.fromHexString(sr));
     return 0;
   }
 
@@ -73,8 +76,12 @@ public class DbRewardDebugNile implements Callable<Integer> {
   public void accumulateWitnessVi(long cycle, byte[] address) {
     BigInteger preVi = getWitnessVi(cycle - 1, address);
     long voteCount = getWitnessVote(cycle, address);
+    spec.commandLine().getOut().println(String.format("cycle:%d ,voteCount:%d",
+        cycle, voteCount));
     logger.info("cycle:{} ,voteCount:{}", cycle, voteCount);
     long reward = getReward(cycle, address);
+    spec.commandLine().getOut().println(String.format("cycle:%d ,reward:%d",
+        cycle, reward));
     logger.info("cycle:{} ,reward:{}", cycle, reward);
     if (reward == 0 || voteCount == 0) { // Just forward pre vi
       if (!BigInteger.ZERO.equals(preVi)) { // Zero vi will not be record
@@ -89,6 +96,8 @@ public class DbRewardDebugNile implements Callable<Integer> {
   }
 
   private void setWitnessVi(long cycle, byte[] address, BigInteger preVi) {
+    spec.commandLine().getOut().println(String.format("cycle:%d ,vi:%s",
+        cycle, ByteArray.toHexString(preVi.toByteArray())));
     logger.info("cycle:{} ,vi:{}", cycle, ByteArray.toHexString(preVi.toByteArray()));
   }
 
