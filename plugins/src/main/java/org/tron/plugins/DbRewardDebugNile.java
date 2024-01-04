@@ -37,6 +37,12 @@ public class DbRewardDebugNile implements Callable<Integer> {
   @CommandLine.Option(names = {"--sr"})
   private String sr = "412DA8912B9A05CBB3D43E16FFFF1C660920D36AC7";
 
+  @CommandLine.Option(names = {"-s", "--start"})
+  private long start = 208102;
+
+  @CommandLine.Option(names = {"-e", "--end"})
+  private long end = -1;
+
   private DBInterface delegationStore;
 
   private static final BigInteger DECIMAL_OF_VI_REWARD = BigInteger.valueOf(10).pow(18);
@@ -55,6 +61,10 @@ public class DbRewardDebugNile implements Callable<Integer> {
       return 404;
     }
     delegationStore = DbTool.getDB(this.db, "delegation");
+    DBInterface propertiesStore = DbTool.getDB(this.db, "properties");
+    if (end == -1) {
+      end = ByteArray.toLong(propertiesStore.get("CURRENT_CYCLE_NUMBER".getBytes()));
+    }
     return calSrVi();
   }
 
@@ -67,7 +77,7 @@ public class DbRewardDebugNile implements Callable<Integer> {
     if (cycle > 0) {
       accumulateWitnessVi(cycle, witness);
     } else {
-      LongStream.range(208102, 219324).forEach(c -> getWitnessVi(c, witness));
+      LongStream.range(start, end).forEach(c -> getWitnessVi(c, witness));
     }
 
   }
