@@ -38,7 +38,7 @@ public class DbRewardDebugNile implements Callable<Integer> {
   private String sr = "412DA8912B9A05CBB3D43E16FFFF1C660920D36AC7";
 
   @CommandLine.Option(names = {"-s", "--start"})
-  private long start = 208102;
+  private long start = -1;
 
   @CommandLine.Option(names = {"-e", "--end"})
   private long end = -1;
@@ -64,6 +64,9 @@ public class DbRewardDebugNile implements Callable<Integer> {
     DBInterface propertiesStore = DbTool.getDB(this.db, "properties");
     if (end == -1) {
       end = ByteArray.toLong(propertiesStore.get("CURRENT_CYCLE_NUMBER".getBytes()));
+    }
+    if (start == -1) {
+      ByteArray.toLong(propertiesStore.get("NEW_REWARD_ALGORITHM_EFFECTIVE_CYCLE".getBytes()));
     }
     return calSrVi();
   }
