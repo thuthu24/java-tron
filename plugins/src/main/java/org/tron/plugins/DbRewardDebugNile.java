@@ -66,7 +66,7 @@ public class DbRewardDebugNile implements Callable<Integer> {
       end = ByteArray.toLong(propertiesStore.get("CURRENT_CYCLE_NUMBER".getBytes()));
     }
     if (start == -1) {
-      ByteArray.toLong(propertiesStore.get("NEW_REWARD_ALGORITHM_EFFECTIVE_CYCLE".getBytes()));
+      start = ByteArray.toLong(propertiesStore.get("NEW_REWARD_ALGORITHM_EFFECTIVE_CYCLE".getBytes()));
     }
     return calSrVi();
   }
