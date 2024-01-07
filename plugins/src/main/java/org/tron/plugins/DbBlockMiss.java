@@ -273,9 +273,14 @@ public class DbBlockMiss implements Callable<Integer> {
         long hour = calendar.get(Calendar.HOUR_OF_DAY);
         long min = calendar.get(Calendar.MINUTE);
         long sec = calendar.get(Calendar.SECOND);
+        long gap = tm - lastBlockTime;
         if (hour % 6 != 0 || min != 0 || sec != 9) {
-          long gap = tm - lastBlockTime;
           if (gap > 3000) {
+            logger.info("{},{}", num, sdf.format(calendar.getTime()));
+            missTotal.incrementAndGet();
+          }
+        } else {
+          if (gap > 3000 * 3) {
             logger.info("{},{}", num, sdf.format(calendar.getTime()));
             missTotal.incrementAndGet();
           }
