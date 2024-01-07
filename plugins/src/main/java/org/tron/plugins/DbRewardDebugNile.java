@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.encoders.Hex;
 import org.tron.plugins.utils.ByteArray;
 import org.tron.plugins.utils.db.DBInterface;
+import org.tron.plugins.utils.db.DBIterator;
 import org.tron.plugins.utils.db.DbTool;
 import picocli.CommandLine;
 
@@ -35,7 +36,7 @@ public class DbRewardDebugNile implements Callable<Integer> {
   private int cycle = -1;
 
   @CommandLine.Option(names = {"--sr"})
-  private String sr = "412DA8912B9A05CBB3D43E16FFFF1C660920D36AC7";
+  private String sr = null;
 
   @CommandLine.Option(names = {"-s", "--start"})
   private long start = -1;
@@ -44,6 +45,8 @@ public class DbRewardDebugNile implements Callable<Integer> {
   private long end = -1;
 
   private DBInterface delegationStore;
+
+  private DBInterface witnessStore;
 
   private static final BigInteger DECIMAL_OF_VI_REWARD = BigInteger.valueOf(10).pow(18);
 
@@ -62,6 +65,7 @@ public class DbRewardDebugNile implements Callable<Integer> {
     }
     delegationStore = DbTool.getDB(this.db, "delegation");
     DBInterface propertiesStore = DbTool.getDB(this.db, "properties");
+    witnessStore = DbTool.getDB(this.db, "witness");
     if (end == -1) {
       end = ByteArray.toLong(propertiesStore.get("CURRENT_CYCLE_NUMBER".getBytes()));
     }
@@ -72,7 +76,13 @@ public class DbRewardDebugNile implements Callable<Integer> {
   }
 
   private int calSrVi() {
-    accumulateWitnessReward(ByteArray.fromHexString(sr));
+    if (sr != null) {
+      accumulateWitnessReward(ByteArray.fromHexString(sr));
+    } else  {
+      DBIterator iterator = witnessStore.iterator();
+      iterator.seekToFirst();
+      iterator.forEachRemaining(entry -> accumulateWitnessReward(entry.getKey()));
+    }
     return 0;
   }
 
@@ -82,9 +92,7 @@ public class DbRewardDebugNile implements Callable<Integer> {
     } else {
       LongStream.range(start, end).forEach(c -> getWitnessVi(c, witness));
     }
-
   }
-
 
   public void accumulateWitnessVi(long cycle, byte[] address) {
     BigInteger preVi = getWitnessVi(cycle - 1, address);
@@ -116,7 +124,7 @@ public class DbRewardDebugNile implements Callable<Integer> {
 
   private BigInteger getWitnessVi(long cycle, byte[] address) {
     byte[] v = delegationStore.get(buildViKey(cycle, address));
-    logger.info("cycle:{} ,vi:{}", cycle, ByteArray.toHexString(v));
+    logger.info("{},{},{}", ByteArray.toHexString(address), cycle, ByteArray.toHexString(v));
     if (v == null) {
       return BigInteger.ZERO;
     } else {
