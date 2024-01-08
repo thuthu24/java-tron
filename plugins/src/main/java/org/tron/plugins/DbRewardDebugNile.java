@@ -71,6 +71,9 @@ public class DbRewardDebugNile implements Callable<Integer> {
     witnessStore = DbTool.getDB(this.db, "witness");
     if (end == -1) {
       end = ByteArray.toLong(propertiesStore.get("CURRENT_CYCLE_NUMBER".getBytes()));
+      if (!vi) {
+        end = end - 1;
+      }
     }
     if (start == -1) {
       start = ByteArray.toLong(propertiesStore.get("NEW_REWARD_ALGORITHM_EFFECTIVE_CYCLE".getBytes()));
