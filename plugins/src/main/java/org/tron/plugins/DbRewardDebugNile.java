@@ -32,6 +32,9 @@ public class DbRewardDebugNile implements Callable<Integer> {
   @CommandLine.Option(names = {"-h", "--help"}, help = true, description = "display a help message")
   private boolean help;
 
+  @CommandLine.Option(names = {"--vi"})
+  private boolean vi;
+
   @CommandLine.Option(names = {"--cycle"})
   private int cycle = -1;
 
@@ -90,7 +93,13 @@ public class DbRewardDebugNile implements Callable<Integer> {
     if (cycle > 0) {
       accumulateWitnessVi(cycle, witness);
     } else {
-      LongStream.range(start, end).forEach(c -> getWitnessVoteAndReward(c, witness));
+      LongStream.range(start, end).forEach(c -> {
+        if (vi) {
+          getWitnessVi(c, witness);
+        } else {
+          getWitnessVoteAndReward(c, witness);
+        }
+      });
     }
   }
 
