@@ -106,6 +106,9 @@ public class DbRewardDebugNile implements Callable<Integer> {
   public void  getWitnessVoteAndReward(long cycle, byte[] address) {
     long voteCount = getWitnessVote(cycle, address);
     long reward = getReward(cycle, address);
+    if (reward == 0 || voteCount == 0) {
+      return;
+    }
     logger.info("{},{},{},{}", ByteArray.toHexString(address), cycle, voteCount, reward);
   }
 
@@ -139,7 +142,9 @@ public class DbRewardDebugNile implements Callable<Integer> {
 
   private BigInteger getWitnessVi(long cycle, byte[] address) {
     byte[] v = delegationStore.get(buildViKey(cycle, address));
-    logger.info("{},{},{}", ByteArray.toHexString(address), cycle, ByteArray.toHexString(v));
+    if (v != null) {
+      logger.info("{},{},{}", ByteArray.toHexString(address), cycle, ByteArray.toHexString(v));
+    }
     if (v == null) {
       return BigInteger.ZERO;
     } else {
