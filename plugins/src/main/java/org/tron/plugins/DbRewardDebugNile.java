@@ -39,7 +39,7 @@ public class DbRewardDebugNile implements Callable<Integer> {
   private String sr = null;
 
   @CommandLine.Option(names = {"-s", "--start"})
-  private long start = -1;
+  private long start = 4000;
 
   @CommandLine.Option(names = {"-e", "--end"})
   private long end = -1;
@@ -90,8 +90,14 @@ public class DbRewardDebugNile implements Callable<Integer> {
     if (cycle > 0) {
       accumulateWitnessVi(cycle, witness);
     } else {
-      LongStream.range(start, end).forEach(c -> getWitnessVi(c, witness));
+      LongStream.range(start, end).forEach(c -> getWitnessVoteAndReward(c, witness));
     }
+  }
+
+  public void  getWitnessVoteAndReward(long cycle, byte[] address) {
+    long voteCount = getWitnessVote(cycle, address);
+    long reward = getReward(cycle, address);
+    logger.info("{},{},{},{}", ByteArray.toHexString(address), cycle, voteCount, reward);
   }
 
   public void accumulateWitnessVi(long cycle, byte[] address) {
