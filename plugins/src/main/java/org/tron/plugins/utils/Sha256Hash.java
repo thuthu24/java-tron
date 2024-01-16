@@ -30,6 +30,8 @@ import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+
+import com.google.protobuf.ByteString;
 import org.bouncycastle.crypto.digests.SM3Digest;
 
 
