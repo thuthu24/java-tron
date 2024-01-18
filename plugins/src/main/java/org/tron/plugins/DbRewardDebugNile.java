@@ -4,9 +4,13 @@ package org.tron.plugins;
 import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.stream.LongStream;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tuweni.bytes.Bytes;
 import org.bouncycastle.util.encoders.Hex;
+import org.hyperledger.besu.ethereum.trie.MerklePatriciaTrie;
+import org.hyperledger.besu.ethereum.trie.SimpleMerklePatriciaTrie;
 import org.tron.plugins.utils.ByteArray;
 import org.tron.plugins.utils.db.DBInterface;
 import org.tron.plugins.utils.db.DBIterator;
@@ -53,6 +57,8 @@ public class DbRewardDebugNile implements Callable<Integer> {
 
   private static final BigInteger DECIMAL_OF_VI_REWARD = BigInteger.valueOf(10).pow(18);
 
+  final MerklePatriciaTrie<Bytes, Bytes> root = new SimpleMerklePatriciaTrie<>(Function.identity());
+
 
   @Override
   public Integer call() throws Exception {
@@ -89,6 +95,8 @@ public class DbRewardDebugNile implements Callable<Integer> {
       iterator.seekToFirst();
       iterator.forEachRemaining(entry -> accumulateWitnessReward(entry.getKey()));
     }
+    logger.info("{}", root.getRootHash());
+    spec.commandLine().getOut().format("%s", root.getRootHash()).println();
     return 0;
   }
 
@@ -113,6 +121,9 @@ public class DbRewardDebugNile implements Callable<Integer> {
       return;
     }
     logger.info("{},{},{},{}", ByteArray.toHexString(address), cycle, voteCount, reward);
+    root.put(Bytes.concatenate(Bytes.wrap(address), Bytes.wrap(ByteArray.fromLong(cycle))),
+        Bytes.concatenate(Bytes.wrap(ByteArray.fromLong(voteCount)),
+            Bytes.wrap(ByteArray.fromLong(reward))));
   }
 
   public void accumulateWitnessVi(long cycle, byte[] address) {
