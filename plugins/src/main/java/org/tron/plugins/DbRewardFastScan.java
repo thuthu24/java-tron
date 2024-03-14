@@ -2,17 +2,21 @@ package org.tron.plugins;
 
 import java.math.BigInteger;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+
+import com.google.common.collect.Streams;
+import com.google.common.primitives.Bytes;
 import lombok.extern.slf4j.Slf4j;
 import me.tongfei.progressbar.ProgressBar;
-import org.apache.tuweni.bytes.Bytes;
 import org.bouncycastle.util.encoders.Hex;
-import org.hyperledger.besu.ethereum.trie.MerklePatriciaTrie;
-import org.hyperledger.besu.ethereum.trie.SimpleMerklePatriciaTrie;
 import org.tron.plugins.utils.ByteArray;
+import org.tron.plugins.utils.MerkleRoot;
+import org.tron.plugins.utils.Sha256Hash;
 import org.tron.plugins.utils.db.DBInterface;
 import org.tron.plugins.utils.db.DBIterator;
 import org.tron.plugins.utils.db.DbTool;
@@ -51,8 +55,8 @@ public class DbRewardFastScan implements Callable<Integer> {
 
   private static final BigInteger DECIMAL_OF_VI_REWARD = BigInteger.valueOf(10).pow(18);
 
-  final MerklePatriciaTrie<Bytes, Bytes> trie = new SimpleMerklePatriciaTrie<>(Function.identity());
-
+  private static final byte[] IS_DONE_KEY = new byte[]{0x00};
+  private static final byte[] IS_DONE_VALUE = new byte[]{0x01};
   @Override
   public Integer call() throws Exception {
     if (help) {
@@ -72,13 +76,37 @@ public class DbRewardFastScan implements Callable<Integer> {
   }
 
   private int calSROldVi() {
+    logger.info("calcMerkleRoot start");
+    spec.commandLine().getOut().println("calcMerkleRoot start");
     DBIterator iterator = witnessStore.iterator();
     iterator.seekToFirst();
     ProgressBar.wrap(iterator, "scan witness").forEachRemaining(e ->
         accumulateWitnessReward(e.getKey()));
+    rewardCacheStore.put(IS_DONE_KEY, IS_DONE_VALUE);
     logger.info("total key :{}", total.get());
-    logger.info("root hash:{}", trie.getRootHash());
+    calcMerkleRoot();
+    logger.info("calcMerkleRoot end");
+    spec.commandLine().getOut().println("calcMerkleRoot end");
     return 0;
+  }
+
+  private void calcMerkleRoot() {
+    logger.info("calcMerkleRoot start");
+    spec.commandLine().getOut().println("calcMerkleRoot start");
+    DBIterator iterator = rewardCacheStore.iterator();
+    iterator.seekToFirst();
+    ArrayList<Sha256Hash> ids = Streams.stream(iterator)
+        .map(this::getHash)
+        .collect(Collectors.toCollection(ArrayList::new));
+
+    Sha256Hash rewardViRootLocal = MerkleRoot.root(ids);
+    logger.info("calcMerkleRoot: {}", rewardViRootLocal);
+    spec.commandLine().getOut().println("calcMerkleRoot: " + rewardViRootLocal);
+  }
+
+  private Sha256Hash getHash(Map.Entry<byte[], byte[]> entry) {
+    return Sha256Hash.of(true,
+        Bytes.concat(entry.getKey(), entry.getValue()));
   }
 
   private void accumulateWitnessReward(byte[] witness) {
@@ -97,7 +125,7 @@ public class DbRewardFastScan implements Callable<Integer> {
   private long getWitnessVote(long cycle, byte[] address) {
     byte[] vote = delegationStore.get(buildVoteKey(cycle, address));
     if (vote == null) {
-      return 0;
+      return -1;
     } else {
       return ByteArray.toLong(vote);
     }
@@ -117,6 +145,11 @@ public class DbRewardFastScan implements Callable<Integer> {
     BigInteger preVi = getWitnessVi(cycle - 1, address);
     long voteCount = getWitnessVote(cycle, address);
     long reward = getReward(cycle, address);
+    if (voteCount == -1 && reward != 0) {
+      logger.error("cycle {} address {} voteCount is -1, reward is {}", cycle, Hex.toHexString(address), reward);
+      spec.commandLine().getErr().println(spec.commandLine().getColorScheme()
+          .errorText(String.format("cycle %d address %s voteCount is -1, reward is %d", cycle, Hex.toHexString(address), reward)));
+    }
     if (reward == 0 || voteCount == 0) { // Just forward pre vi
       if (!BigInteger.ZERO.equals(preVi)) { // Zero vi will not be record
         setWitnessVi(cycle, address, preVi);
@@ -132,7 +165,6 @@ public class DbRewardFastScan implements Callable<Integer> {
   public void setWitnessVi(long cycle, byte[] address, BigInteger value) {
     byte[] k = buildViKey(cycle, address);
     byte[] v = value.toByteArray();
-    trie.put(Bytes.wrap(k), Bytes.wrap(v));
     rewardCacheStore.put(k, v);
     total.incrementAndGet();
   }

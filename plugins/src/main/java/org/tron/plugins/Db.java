@@ -25,8 +25,6 @@ import picocli.CommandLine;
         DbRewardScan.class,
         DbBlockRewardScan.class,
         DbRewardCacheScan.class,
-        DbTrim.class,
-        DbRoot.class,
         DbTmpCompare.class,
         DbRewardMissScan.class,
         DbRewardCheck.class,
@@ -35,6 +33,7 @@ import picocli.CommandLine;
         DbRewardDebugNile.class,
         DbBlockMiss.class,
         DbOldRewardVi.class,
+        DbRoot.class
     },
     commandListHeading = "%nCommands:%n%nThe most commonly used db commands are:%n"
 )
