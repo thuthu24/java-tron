@@ -164,6 +164,7 @@ public class FreezeV2Test {
   private static Manager manager;
   private static byte[] owner;
   private static Repository rootRepository;
+  private static ChainBaseManager chainBaseManager;
   private static WorldStateCallBack worldStateCallBack;
 
   @Before
@@ -172,6 +173,7 @@ public class FreezeV2Test {
         temporaryFolder.newFolder().toString(), "--debug"}, Constant.TEST_CONF);
     context = new TronApplicationContext(DefaultConfig.class);
     manager = context.getBean(Manager.class);
+    chainBaseManager = context.getBean(ChainBaseManager.class);
     worldStateCallBack = context.getBean(WorldStateCallBack.class);
     worldStateCallBack.setExecute(true);
     owner = Hex.decode(Wallet.getAddressPreFixString()
