@@ -33,6 +33,7 @@ import picocli.CommandLine;
         DbRewardDebugNile.class,
         DbBlockMiss.class,
         DbOldRewardVi.class,
+        DbBlockHeaderCheck.class,
         DbRoot.class
     },
     commandListHeading = "%nCommands:%n%nThe most commonly used db commands are:%n"
