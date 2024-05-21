@@ -15,11 +15,25 @@
 
 package org.tron.common.application;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface Service {
 
-  void start();
+  /**
+   * Starts the service and all needed backend systems.
+   *
+   * @return completion state
+   */
+  CompletableFuture<?> start();
 
-  void stop();
+  /**
+   * Stops the service and performs needed cleanup.
+   *
+   * @return completion state
+   */
+  CompletableFuture<?> stop();
 
   boolean isEnable();
+
+  String getName();
 }

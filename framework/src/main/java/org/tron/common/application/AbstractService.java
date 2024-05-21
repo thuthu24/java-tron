@@ -1,6 +1,7 @@
 package org.tron.common.application;
 
 import com.google.common.base.Objects;
+import java.util.concurrent.CompletableFuture;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.core.config.args.Args;
@@ -12,30 +13,36 @@ public abstract class AbstractService implements Service {
   protected int port;
   @Getter
   protected boolean enable;
+  @Getter
   protected final String name = this.getClass().getSimpleName();
 
 
   @Override
-  public void start() {
+  public CompletableFuture<?> start() {
+    logger.info("{} starting on {}", name, port);
+    final CompletableFuture<?> resultFuture = new CompletableFuture<>();
     try {
       innerStart();
+      resultFuture.complete(null);
       logger.info("{} started, listening on {}", name, port);
     } catch (Exception e) {
-      logger.error("{}", name, e);
+      resultFuture.completeExceptionally(e);
     }
+    return resultFuture;
   }
 
   @Override
-  public void stop() {
+  public CompletableFuture<?> stop() {
     logger.info("{} shutdown...", name);
+    final CompletableFuture<?> resultFuture = new CompletableFuture<>();
     try {
       innerStop();
+      resultFuture.complete(null);
+      logger.info("{} shutdown complete", name);
     } catch (Exception e) {
-      logger.warn("{}", name, e);
+      resultFuture.completeExceptionally(e);
     }
-    logger.info("{} shutdown complete", name);
-
-
+    return resultFuture;
   }
 
   @Override

@@ -15,25 +15,61 @@
 
 package org.tron.common.application;
 
+import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jetty.server.ConnectionLimit;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.tron.core.config.args.Args;
 
 @Slf4j(topic = "rpc")
 public abstract class HttpService extends AbstractService {
 
   protected Server apiServer;
 
+  protected String contextPath;
+
   @Override
   public void innerStart() throws Exception {
-    if (apiServer != null) {
-      apiServer.start();
+    if (this.apiServer != null) {
+      this.apiServer.start();
     }
   }
 
   @Override
   public void innerStop() throws Exception {
-    if (apiServer != null) {
-      apiServer.stop();
+    if (this.apiServer != null) {
+      this.apiServer.stop();
     }
+  }
+
+  @Override
+  public CompletableFuture<?> start() {
+    initServer();
+    ServletContextHandler context = initContextHandler();
+    addServlet(context);
+    addFilter(context);
+    return super.start();
+  }
+
+  protected void initServer() {
+    this.apiServer = new Server(this.port);
+    int maxHttpConnectNumber = Args.getInstance().getMaxHttpConnectNumber();
+    if (maxHttpConnectNumber > 0) {
+      this.apiServer.addBean(new ConnectionLimit(maxHttpConnectNumber, this.apiServer));
+    }
+  }
+
+  protected ServletContextHandler initContextHandler() {
+    ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+    context.setContextPath(this.contextPath);
+    this.apiServer.setHandler(context);
+    return context;
+  }
+
+  protected abstract void addServlet(ServletContextHandler context);
+
+  protected void addFilter(ServletContextHandler context) {
+
   }
 }

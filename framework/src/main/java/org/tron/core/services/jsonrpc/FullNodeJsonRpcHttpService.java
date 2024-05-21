@@ -3,8 +3,6 @@ package org.tron.core.services.jsonrpc;
 import java.util.EnumSet;
 import javax.servlet.DispatcherType;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jetty.server.ConnectionLimit;
-import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
@@ -25,34 +23,21 @@ public class FullNodeJsonRpcHttpService extends HttpService {
   public FullNodeJsonRpcHttpService() {
     port = Args.getInstance().getJsonRpcHttpFullNodePort();
     enable = isFullNode() && Args.getInstance().isJsonRpcHttpFullNodeEnable();
+    contextPath = "/";
   }
 
   @Override
-  public void start() {
-    try {
-      apiServer = new Server(port);
-      ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-      context.setContextPath("/");
-      apiServer.setHandler(context);
+  protected void addServlet(ServletContextHandler context) {
+    context.addServlet(new ServletHolder(jsonRpcServlet), "/jsonrpc");
+  }
 
-      context.addServlet(new ServletHolder(jsonRpcServlet), "/jsonrpc");
-
-      int maxHttpConnectNumber = Args.getInstance().getMaxHttpConnectNumber();
-      if (maxHttpConnectNumber > 0) {
-        apiServer.addBean(new ConnectionLimit(maxHttpConnectNumber, apiServer));
-      }
-
-      // filter
-      ServletHandler handler = new ServletHandler();
-      FilterHolder fh = handler
-          .addFilterWithMapping(HttpInterceptor.class, "/*",
-              EnumSet.of(DispatcherType.REQUEST));
-      context.addFilter(fh, "/*", EnumSet.of(DispatcherType.REQUEST));
-
-      super.start();
-
-    } catch (Exception e) {
-      logger.debug("IOException: {}", e.getMessage());
-    }
+  @Override
+  protected void addFilter(ServletContextHandler context) {
+    // filter
+    ServletHandler handler = new ServletHandler();
+    FilterHolder fh = handler
+        .addFilterWithMapping(HttpInterceptor.class, "/*",
+            EnumSet.of(DispatcherType.REQUEST));
+    context.addFilter(fh, "/*", EnumSet.of(DispatcherType.REQUEST));
   }
 }

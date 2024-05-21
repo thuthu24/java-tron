@@ -12,6 +12,7 @@ import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
 import org.tron.common.application.TronApplicationContext;
 import org.tron.common.parameter.CommonParameter;
+import org.tron.common.utils.PublicMethod;
 import org.tron.core.Constant;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
@@ -46,15 +47,25 @@ public class MetricsApiServiceTest {
         },
         "config.conf"
     );
+    Args.getInstance().setRpcEnable(false);
+    Args.getInstance().setRpcSolidityEnable(false);
+    Args.getInstance().setRpcPBFTEnable(false);
+    Args.getInstance().setFullNodeHttpEnable(false);
+    Args.getInstance().setFullNodeHttpPort(PublicMethod.chooseRandomPort());
+    Args.getInstance().setPBFTHttpEnable(false);
+    Args.getInstance().setPBFTHttpPort(PublicMethod.chooseRandomPort());
+    Args.getInstance().setSolidityNodeHttpEnable(false);
+    Args.getInstance().setSolidityHttpPort(PublicMethod.chooseRandomPort());
+    Args.getInstance().setJsonRpcHttpFullNodeEnable(false);
+    Args.getInstance().setJsonRpcHttpSolidityNodeEnable(false);
+    Args.getInstance().setJsonRpcHttpPBFTNodeEnable(false);
     CommonParameter parameter = Args.getInstance();
     parameter.setNodeListenPort(port);
     parameter.getSeedNode().getAddressList().clear();
     parameter.setNodeExternalIp("127.0.0.1");
     context = new TronApplicationContext(DefaultConfig.class);
     appT = ApplicationFactory.create(context);
-    rpcApiService = context.getBean(RpcApiService.class);
     metricsApiService = context.getBean(MetricsApiService.class);
-    appT.addService(rpcApiService);
     appT.startup();
   }
 

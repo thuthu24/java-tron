@@ -16,6 +16,10 @@
 package org.tron.common.application;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -43,13 +47,45 @@ public class ServiceContainer {
 
   void start() {
     logger.info("Starting api services.");
-    this.enabledServices.forEach(Service::start);
+    this.enabledServices.forEach(this::waitForServiceToStart);
     logger.info("All api services started.");
   }
 
   void stop() {
     logger.info("Stopping api services.");
-    this.enabledServices.forEach(Service::stop);
+    this.enabledServices.forEach(this::waitForServiceToStop);
     logger.info("All api services stopped.");
+  }
+
+  private void waitForServiceToStart(Service service) {
+    final String serviceName = service.getName();
+    final CompletableFuture<?> startFuture = service.start();
+    do {
+      try {
+        startFuture.get(60, TimeUnit.SECONDS);
+      } catch (final InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException("Interrupted while waiting for service to start", e);
+      } catch (final ExecutionException e) {
+        throw new IllegalStateException("Service " + serviceName + " failed to start", e);
+      } catch (final TimeoutException e) {
+        logger.warn("Service {} is taking an unusually long time to start", serviceName);
+      }
+    } while (!startFuture.isDone());
+  }
+
+  private void waitForServiceToStop(Service service) {
+    final String serviceName = service.getName();
+    final CompletableFuture<?> stopFuture = service.stop();
+    try {
+      stopFuture.get(30, TimeUnit.SECONDS);
+    } catch (final InterruptedException e) {
+      logger.debug("Interrupted while waiting for service {} to complete", serviceName, e);
+      Thread.currentThread().interrupt();
+    } catch (final ExecutionException e) {
+      logger.error("Service {} failed to shutdown", serviceName, e);
+    } catch (final TimeoutException e) {
+      logger.error("Service {} did not shut down cleanly", serviceName);
+    }
   }
 }
