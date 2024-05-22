@@ -15,9 +15,12 @@ import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.tron.common.BaseTest;
 import org.tron.common.crypto.ECKey;
+import org.tron.common.metrics.MetricService;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.prometheus.MetricLabels;
 import org.tron.common.prometheus.Metrics;
@@ -54,11 +57,14 @@ public class PrometheusApiServiceTest extends BaseTest {
   @Resource
   private ChainBaseManager chainManager;
 
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
+
   static {
     Args.setParam(new String[] {"-d", dbPath(), "-w"}, Constant.TEST_CONF);
     Args.getInstance().setNodeListenPort(10000 + port.incrementAndGet());
     initParameter(Args.getInstance());
-    Metrics.init();
+    MetricService.startPrometheus();
   }
 
   protected static void initParameter(CommonParameter parameter) {
@@ -134,6 +140,12 @@ public class PrometheusApiServiceTest extends BaseTest {
       generateBlock(witnessAndAccount);
     }
     check();
+    // try to start prometheus again
+    MetricService.startPrometheus();
+    Metrics.setInitialized(false);
+    thrown.expect(IllegalStateException.class);
+    // try to start prometheus again
+    MetricService.startPrometheus();
   }
 
   private Map<ByteString, String> addTestWitnessAndAccount() {

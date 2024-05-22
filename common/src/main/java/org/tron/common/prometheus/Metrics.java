@@ -1,11 +1,13 @@
 package org.tron.common.prometheus;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Histogram;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
 import java.io.IOException;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.common.parameter.CommonParameter;
 
@@ -13,29 +15,26 @@ import org.tron.common.parameter.CommonParameter;
 public class Metrics {
 
   public static final double MILLISECONDS_PER_SECOND = Collector.MILLISECONDS_PER_SECOND;
+  @Setter
+  @VisibleForTesting
   private static volatile boolean initialized = false;
 
   private Metrics() {
     throw new IllegalStateException("Metrics");
   }
 
-  public static synchronized  void init() {
+  public static synchronized void init() throws IOException {
     if(initialized) {
       return;
     }
     if (CommonParameter.getInstance().isMetricsPrometheusEnable()) {
-      try {
-        DefaultExports.initialize();
-        new OperatingSystemExports().register(CollectorRegistry.defaultRegistry);
-        new GuavaCacheExports().register(CollectorRegistry.defaultRegistry);
-        int port = CommonParameter.getInstance().getMetricsPrometheusPort();
-        new HTTPServer.Builder().withPort(port).build();
-        logger.info("prometheus exposed on port : {}", port);
-        initialized = true;
-      } catch (IOException e) {
-        CommonParameter.getInstance().setMetricsPrometheusEnable(false);
-        logger.error("{}", e.getMessage());
-      }
+      DefaultExports.initialize();
+      new OperatingSystemExports().register(CollectorRegistry.defaultRegistry);
+      new GuavaCacheExports().register(CollectorRegistry.defaultRegistry);
+      int port = CommonParameter.getInstance().getMetricsPrometheusPort();
+      new HTTPServer.Builder().withPort(port).build();
+      logger.info("prometheus exposed on port : {}", port);
+      initialized = true;
     }
   }
 

@@ -18,8 +18,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.tron.common.BaseTest;
+import org.tron.common.metrics.MetricService;
 import org.tron.common.parameter.CommonParameter;
-import org.tron.common.prometheus.Metrics;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.core.Constant;
@@ -69,7 +69,7 @@ public class JsonrpcServiceTest extends BaseTest {
     CommonParameter.getInstance().setJsonRpcHttpPBFTNodeEnable(true);
     CommonParameter.getInstance().setJsonRpcHttpSolidityNodeEnable(true);
     CommonParameter.getInstance().setMetricsPrometheusEnable(true);
-    Metrics.init();
+    MetricService.startPrometheus();
 
     OWNER_ADDRESS =
         Wallet.getAddressPreFixString() + "abd4b9367799eaa3197fecb144eb71de1e049abc";

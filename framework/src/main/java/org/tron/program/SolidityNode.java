@@ -11,8 +11,8 @@ import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
 import org.tron.common.application.TronApplicationContext;
 import org.tron.common.client.DatabaseGrpcClient;
+import org.tron.common.metrics.MetricService;
 import org.tron.common.parameter.CommonParameter;
-import org.tron.common.prometheus.Metrics;
 import org.tron.core.ChainBaseManager;
 import org.tron.core.Constant;
 import org.tron.core.capsule.BlockCapsule;
@@ -75,7 +75,7 @@ public class SolidityNode {
       return;
     }
     // init metrics first
-    Metrics.init();
+    MetricService.startPrometheus();
 
     Application appT = ApplicationFactory.create(context);
     SolidityNode node = new SolidityNode(appT.getDbManager());
