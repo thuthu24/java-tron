@@ -4,7 +4,6 @@ plugins {
 
 version '1.0.0'
 
-sourceCompatibility = 1.8
 
 // Dependency versions
 // ---------------------------------------
@@ -46,6 +45,7 @@ dependencies {
     api 'org.aspectj:aspectjrt:1.8.13'
     api 'org.aspectj:aspectjweaver:1.8.13'
     api 'org.aspectj:aspectjtools:1.8.13'
+    implementation 'com.github.zhang0125:tron-math:79b00fd78f'
     api group: 'io.github.tronprotocol', name: 'libp2p', version: '2.2.1',{
         exclude group: 'io.grpc', module: 'grpc-context'
         exclude group: 'io.grpc', module: 'grpc-core'
