@@ -145,6 +145,12 @@ public final class MathWrapper {
   public static double powjdk8(double a, double b) {
     Preconditions.checkArgument(b > -1 && b < 1, "b must be -1<b<1");
     Preconditions.checkArgument(a > 1 && a < 2, "a must be 1<a<2");
-    return TronMath.pow(a, b);
+    double jdk8 = TronMath.pow(a, b);
+    double strict = StrictMathWrapper.pow(a, b);
+    if (Double.compare(jdk8, strict) != 0) {
+      logger.info("{}\t{}\t{}", String.format("%.16f", a),
+          String.format("%.16f", jdk8), String.format("%.16f", strict));
+    }
+    return jdk8;
   }
 }
