@@ -63,6 +63,7 @@ import org.tron.common.logsfilter.trigger.ContractEventTrigger;
 import org.tron.common.logsfilter.trigger.ContractLogTrigger;
 import org.tron.common.logsfilter.trigger.ContractTrigger;
 import org.tron.common.logsfilter.trigger.Trigger;
+import org.tron.common.math.MathWrapper;
 import org.tron.common.overlay.message.Message;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.prometheus.MetricKeys;
@@ -1803,8 +1804,8 @@ public class Manager {
       mortgageService.payStandbyWitness();
 
       if (chainBaseManager.getDynamicPropertiesStore().supportTransactionFeePool()) {
-        long transactionFeeReward = Math
-            .floorDiv(chainBaseManager.getDynamicPropertiesStore().getTransactionFeePool(),
+        long transactionFeeReward = MathWrapper.floorDiv(
+            chainBaseManager.getDynamicPropertiesStore().getTransactionFeePool(),
                 Constant.TRANSACTION_FEE_POOL_PERIOD);
         mortgageService.payTransactionFeeReward(witnessCapsule.getAddress().toByteArray(),
             transactionFeeReward);
@@ -1819,8 +1820,8 @@ public class Manager {
           + chainBaseManager.getDynamicPropertiesStore().getWitnessPayPerBlock());
 
       if (chainBaseManager.getDynamicPropertiesStore().supportTransactionFeePool()) {
-        long transactionFeeReward = Math
-            .floorDiv(chainBaseManager.getDynamicPropertiesStore().getTransactionFeePool(),
+        long transactionFeeReward = MathWrapper.floorDiv(
+            chainBaseManager.getDynamicPropertiesStore().getTransactionFeePool(),
                 Constant.TRANSACTION_FEE_POOL_PERIOD);
         account.setAllowance(account.getAllowance() + transactionFeeReward);
         chainBaseManager.getDynamicPropertiesStore().saveTransactionFeePool(
@@ -2402,8 +2403,8 @@ public class Manager {
         }
         transactionCount += trx.getTransactionIds().size();
         long blockNum = trx.getNum();
-        maxBlock = Math.max(maxBlock, blockNum);
-        minBlock = Math.min(minBlock, blockNum);
+        maxBlock = MathWrapper.max(maxBlock, blockNum);
+        minBlock = MathWrapper.min(minBlock, blockNum);
         item.setBlockNum(blockNum);
         trx.getTransactionIds().forEach(
             tid -> chainBaseManager.getTransactionStore().put(Hex.decode(tid), item));

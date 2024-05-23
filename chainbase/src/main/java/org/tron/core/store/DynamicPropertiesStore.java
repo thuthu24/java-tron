@@ -13,6 +13,7 @@ import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.tron.common.math.MathWrapper;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Sha256Hash;
@@ -2235,7 +2236,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     long totalNetWeight = getTotalNetWeight();
     totalNetWeight += amount;
     if (allowNewReward()) {
-      totalNetWeight = Math.max(0, totalNetWeight);
+      totalNetWeight = MathWrapper.max(0, totalNetWeight);
     }
     saveTotalNetWeight(totalNetWeight);
   }
@@ -2248,7 +2249,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     long totalEnergyWeight = getTotalEnergyWeight();
     totalEnergyWeight += amount;
     if (allowNewReward()) {
-      totalEnergyWeight = Math.max(0, totalEnergyWeight);
+      totalEnergyWeight = MathWrapper.max(0, totalEnergyWeight);
     }
     saveTotalEnergyWeight(totalEnergyWeight);
   }
@@ -2261,7 +2262,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     long totalWeight = getTotalTronPowerWeight();
     totalWeight += amount;
     if (allowNewReward()) {
-      totalWeight = Math.max(0, totalWeight);
+      totalWeight = MathWrapper.max(0, totalWeight);
     }
     saveTotalTronPowerWeight(totalWeight);
   }

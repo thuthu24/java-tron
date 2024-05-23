@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import lombok.extern.slf4j.Slf4j;
+import org.tron.common.math.MathWrapper;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.ByteUtil;
 import org.tron.common.utils.Commons;
@@ -164,7 +165,7 @@ public final class VMUtils {
             "Validate InternalTransfer error, balance is not sufficient.");
       }
 
-      Math.addExact(toAccount.getBalance(), amount);
+      MathWrapper.addExact(toAccount.getBalance(), amount);
     } catch (ArithmeticException e) {
       logger.debug(e.getMessage(), e);
       throw new ContractValidateException(e.getMessage());
@@ -225,7 +226,7 @@ public final class VMUtils {
               ByteArray.toStr(tokenIdWithoutLeadingZero));
       if (assetBalance != null) {
         try {
-          assetBalance = Math.addExact(assetBalance, amount); //check if overflow
+          assetBalance = MathWrapper.addExact(assetBalance, amount); //check if overflow
         } catch (Exception e) {
           logger.debug(e.getMessage(), e);
           throw new ContractValidateException(e.getMessage());

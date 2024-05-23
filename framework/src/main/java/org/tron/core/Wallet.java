@@ -107,6 +107,7 @@ import org.tron.api.GrpcAPI.WitnessList;
 import org.tron.common.crypto.Hash;
 import org.tron.common.crypto.SignInterface;
 import org.tron.common.crypto.SignUtils;
+import org.tron.common.math.MathWrapper;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.runtime.ProgramResult;
 import org.tron.common.runtime.vm.LogInfo;
@@ -884,7 +885,7 @@ public class Wallet {
     long v2NetUsage = getV2NetUsage(ownerCapsule, netUsage);
 
     long maxSize = ownerCapsule.getFrozenV2BalanceForBandwidth() - v2NetUsage;
-    return Math.max(0, maxSize);
+    return MathWrapper.max(0, maxSize);
   }
 
   public long calcCanDelegatedEnergyMaxSize(ByteString ownerAddress) {
@@ -904,7 +905,7 @@ public class Wallet {
     long v2EnergyUsage = getV2EnergyUsage(ownerCapsule, energyUsage);
 
     long maxSize =  ownerCapsule.getFrozenV2BalanceForEnergy() - v2EnergyUsage;
-    return Math.max(0, maxSize);
+    return MathWrapper.max(0, maxSize);
   }
 
   public DelegatedResourceAccountIndex getDelegatedResourceAccountIndex(ByteString address) {
@@ -2961,7 +2962,7 @@ public class Wallet {
     if (transaction.getRet(0).getRet().equals(code.SUCESS)) {
       txRetBuilder.setResult(true);
       txRetBuilder.setCode(response_code.SUCCESS);
-      estimateBuilder.setEnergyRequired((long) Math.ceil((double) high / dps.getEnergyFee()));
+      estimateBuilder.setEnergyRequired((long) MathWrapper.ceil((double) high / dps.getEnergyFee()));
     }
 
     return transaction;
@@ -3516,7 +3517,7 @@ public class Wallet {
     if (scaledToAmount > 0) {
       try {
         totalToAmount = receiveSize == 0 ? scaledToAmount
-            : (Math.addExact(scaledToAmount, shieldedReceives.get(0).getNote().getValue()));
+            : (MathWrapper.addExact(scaledToAmount, shieldedReceives.get(0).getNote().getValue()));
       } catch (ArithmeticException e) {
         throw new ZksnarkException("Unbalanced burn!");
       }
@@ -3648,7 +3649,7 @@ public class Wallet {
     if (scaledToAmount > 0) {
       try {
         totalToAmount = receiveSize == 0 ? scaledToAmount
-            : Math.addExact(scaledToAmount, shieldedReceives.get(0).getNote().getValue());
+            : MathWrapper.addExact(scaledToAmount, shieldedReceives.get(0).getNote().getValue());
       } catch (ArithmeticException e) {
         throw new ZksnarkException("Unbalanced burn!");
       }
