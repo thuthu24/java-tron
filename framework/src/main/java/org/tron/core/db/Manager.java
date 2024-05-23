@@ -1424,7 +1424,7 @@ public class Manager {
     if (Objects.nonNull(blockCap)) {
       chainBaseManager.getBalanceTraceStore().initCurrentTransactionBalanceTrace(trxCap);
     }
-    if (Objects.nonNull(blockCap) && !blockCap.generatedByMyself) {
+    if (Objects.isNull(blockCap) || !blockCap.generatedByMyself) {
       validateTapos(trxCap);
       validateCommon(trxCap);
       if (trxCap.getInstance().getRawData().getContractList().size() != 1) {
