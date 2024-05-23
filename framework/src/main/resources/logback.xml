@@ -51,22 +51,6 @@
     </filter>
   </appender>
 
-  <appender name="MATH" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <File>./logs/db/math.log</File>
-    <rollingPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-      <fileNamePattern>./logs/math/math.%i.log.gz</fileNamePattern>
-      <maxFileSize>500MB</maxFileSize>
-      <totalSizeCap>50GB</totalSizeCap>
-    </rollingPolicy>
-    <encoder charset="UTF-8">
-      <pattern>%m</pattern>
-      <charset>UTF-8</charset>
-    </encoder>
-    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>TRACE</level>
-    </filter>
-  </appender>
-
   <appender class="ch.qos.logback.classic.AsyncAppender" name="ASYNC">
     <!-- Don't discard INFO, DEBUG, TRACE events in case of queue is 80% full -->
     <discardingThreshold>0</discardingThreshold>
@@ -107,9 +91,6 @@
   </logger>
   <logger level="INFO" name="ROCKSDB" additivity="false" >
     <appender-ref ref="DB"/>
-  </logger>
-  <logger level="INFO" name="math" additivity="false" >
-    <appender-ref ref="MATH"/>
   </logger>
   <logger level="INFO" name="tool" additivity="false">
     <appender-ref ref="CONSOLE"/>
