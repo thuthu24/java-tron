@@ -148,9 +148,15 @@ public final class MathWrapper {
     double jdk8 = TronMath.pow(a, b);
     double strict = StrictMathWrapper.pow(a, b);
     if (Double.compare(jdk8, strict) != 0) {
-      logger.info("{}\t{}\t{}", String.format("%.16f", a),
-          String.format("%.16f", jdk8), String.format("%.16f", strict));
+      logger.info("{}\t{}\t{}", doubleToHex(a), doubleToHex(jdk8), doubleToHex(strict));
     }
     return jdk8;
+  }
+
+  public static String doubleToHex(double input) {
+    // Convert the starting value to the equivalent value in a long
+    long doubleAsLong = Double.doubleToRawLongBits(input);
+    // and then convert the long to a hex string
+    return Long.toHexString(doubleAsLong);
   }
 }
