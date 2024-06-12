@@ -15,8 +15,7 @@ public class MathTest {
     double ret3 = StrictMathWrapper.pow(a, 0.0005);
     Assert.assertNotEquals(0, Double.compare(ret, ret2));
     Assert.assertNotEquals(0, Double.compare(ret2, ret3));
-    Assert.assertEquals(0, Double.compare(
-        PowDataForJdk8.getData().get(a), ret2));
+    Assert.assertEquals(0, Double.compare(PowDataForJdk8.get(a), ret2));
     Assert.assertEquals(0, Double.compare(ret, ret3));
   }
 }

@@ -3,7 +3,6 @@ package org.tron.common.math;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Getter;
 
 /**
  * This class is used to provide the same pow data for jdk8.
@@ -12,7 +11,6 @@ import lombok.Getter;
  */
 class PowDataForJdk8 {
 
-  @Getter
   private  static final Map<Double, Double> data = Collections.synchronizedMap(new HashMap<>());
 
   /**
@@ -369,6 +367,17 @@ class PowDataForJdk8 {
 
   private static void addData(String a, String x87Ret) {
     data.put(hexToDouble(a), hexToDouble(x87Ret));
+  }
+
+  public static Double get(double key) {
+    return data.get(key);
+  }
+
+  static String doubleToHex(double input) {
+    // Convert the double to a long
+    long inputAsLong = Double.doubleToLongBits(input);
+    // and then convert the long to a hex string
+    return Long.toHexString(inputAsLong);
   }
 
   static double hexToDouble(String input) {

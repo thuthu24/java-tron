@@ -140,6 +140,12 @@ public final class MathWrapper {
   public static double powForExchange(double a, double b) {
     Preconditions.checkArgument(b > -1 && b < 1, "b must be -1<b<1");
     Preconditions.checkArgument(a > 1 && a < 2, "a must be 1<a<2");
-    return PowDataForJdk8.getData().getOrDefault(a, StrictMathWrapper.pow(a, b));
+    Double ret = PowDataForJdk8.get(a);
+    if (ret != null) {
+      logger.info("get from x87, a: {}, ret: {}", PowDataForJdk8.doubleToHex(a),
+          PowDataForJdk8.doubleToHex(ret));
+      return ret;
+    }
+    return pow(a, b);
   }
 }
