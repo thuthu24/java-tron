@@ -137,7 +137,7 @@ public final class MathWrapper {
    *  only used in ExchangeProcessor.java
    * @see org.tron.core.capsule.ExchangeProcessor#exchangeToSupply(long, long) 
    */
-  public static double powjdk8(double a, double b) {
+  public static double powForExchange(double a, double b) {
     Preconditions.checkArgument(b > -1 && b < 1, "b must be -1<b<1");
     Preconditions.checkArgument(a > 1 && a < 2, "a must be 1<a<2");
     return PowDataForJdk8.getData().getOrDefault(a, StrictMathWrapper.pow(a, b));

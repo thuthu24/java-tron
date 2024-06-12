@@ -11,7 +11,7 @@ public class MathTest {
     long q = 4761432;
     double a = 1.0 + (double) x / q;
     double ret = MathWrapper.pow(a, 0.0005);
-    double ret2 = MathWrapper.powjdk8(a, 0.0005);
+    double ret2 = MathWrapper.powForExchange(a, 0.0005);
     double ret3 = StrictMathWrapper.pow(a, 0.0005);
     Assert.assertNotEquals(0, Double.compare(ret, ret2));
     Assert.assertNotEquals(0, Double.compare(ret2, ret3));
