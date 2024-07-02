@@ -363,6 +363,8 @@ class PowDataForJdk8 {
     addData("3ffffcf9acb020be", "3ff0016b472e0602");
     addData("3ff0010b331a0d17", "3ff0000022327b72");
     addData("3ff0016a01a8e426", "3ff000002e542eac");
+    // addData 2024-07-02 height 31717832
+    addData("3ff00004e5545390", "3ff0000000a06d00");
   }
 
   private static void addData(String a, String x87Ret) {
