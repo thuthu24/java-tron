@@ -49,6 +49,7 @@ import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.TransactionInfoList;
 import org.tron.common.args.GenesisBlock;
 import org.tron.common.bloom.Bloom;
+import org.tron.common.context.GlobalContext;
 import org.tron.common.es.ExecutorServiceManager;
 import org.tron.common.logsfilter.EventPluginLoader;
 import org.tron.common.logsfilter.FilterQuery;
@@ -1222,6 +1223,7 @@ public class Manager {
         Metrics.histogramObserve(blockedTimer.get());
         blockedTimer.remove();
         long headerNumber = getDynamicPropertiesStore().getLatestBlockHeaderNumber();
+        GlobalContext.setHeader(headerNumber);
         if (block.getNum() <= headerNumber && khaosDb.containBlockInMiniStore(block.getBlockId())) {
           logger.info("Block {} is already exist.", block.getBlockId().getString());
           return;
@@ -1358,6 +1360,7 @@ public class Manager {
       }
     } finally {
       setBlockWaitLock(false);
+      GlobalContext.removeHeader();
     }
   }
 
