@@ -373,8 +373,10 @@ public class JLibrustzcash {
   }
 
   private static void log(int c, byte[] ... params) {
-    GlobalContext.getHeader().ifPresent(header -> logger.info("{}:{}:{}", header, c,
-        Stream.of(params).map(ByteArray::toHexString).collect(Collectors.joining(","))));
+    if (GlobalContext.isLog()) {
+      GlobalContext.getHeader().ifPresent(header -> logger.info("{}:{}:{}", header, c,
+          Stream.of(params).map(ByteArray::toHexString).collect(Collectors.joining(","))));
+    }
   }
 
   private static byte[] l2B(long value) {
