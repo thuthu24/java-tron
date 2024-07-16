@@ -2,6 +2,8 @@ plugins {
     id "org.gradle.test-retry" version "1.5.9"
     id "org.sonarqube" version "2.6"
     id "com.gorylenko.gradle-git-properties" version "2.4.1"
+    id("org.kordamp.gradle.jdeps") version "0.20.0"
+    id("org.kordamp.gradle.jdeprscan") version "0.11.0"
 }
 
 gitProperties.failOnNoGitDirectory = false;
@@ -15,10 +17,10 @@ def versions = [
         checkstyle: '8.7',
 ]
 
-jacoco {
-    toolVersion = "0.8.1"
+jdepsReport {
+    sourceSets = ['main', 'test']
+    configurations = ['testRuntimeClasspath']
 }
-
 
 configurations {
     checkstyleConfig
@@ -47,7 +49,6 @@ dependencies {
     implementation group: 'com.google.inject', name: 'guice', version: '4.1.0'
     implementation group: 'io.dropwizard.metrics', name: 'metrics-core', version: '3.1.2'
     implementation group: 'com.github.davidb', name: 'metrics-influxdb', version: '0.8.2'
-    implementation group: 'com.carrotsearch', name: 'java-sizeof', version: '0.0.5'
     // http
     implementation 'org.eclipse.jetty:jetty-server:9.4.53.v20231009'
     implementation 'org.eclipse.jetty:jetty-servlet:9.4.53.v20231009'
@@ -63,8 +64,8 @@ dependencies {
     implementation "io.vavr:vavr:0.9.2"
     implementation group: 'org.pf4j', name: 'pf4j', version: '2.5.0'
 
-    testImplementation group: 'org.springframework', name: 'spring-test', version: '5.2.0.RELEASE'
-    testImplementation group: 'org.springframework', name: 'spring-web', version: '5.2.0.RELEASE'
+    testImplementation group: 'org.springframework', name: 'spring-test', version: '5.3.37'
+    testImplementation group: 'org.springframework', name: 'spring-web', version: '5.3.37'
 
     implementation group: 'org.zeromq', name: 'jeromq', version: '0.5.3'
     api project(":chainbase")
