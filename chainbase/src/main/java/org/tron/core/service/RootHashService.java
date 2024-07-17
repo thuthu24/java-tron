@@ -3,14 +3,20 @@ package org.tron.core.service;
 import com.google.common.collect.Streams;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.extern.slf4j.Slf4j;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.MerkleRoot;
 import org.tron.common.utils.Pair;
 import org.tron.common.utils.Sha256Hash;
 
+@Slf4j(topic = "DB")
 public class RootHashService {
 
   private static final byte[] HEADER_KEY = Bytes.concat(simpleEncode("properties"),
@@ -25,7 +31,10 @@ public class RootHashService {
       }
       ids.add(getHash(entry));
     });
-    return new Pair<>(height.get(), MerkleRoot.root(ids));
+    Sha256Hash root = MerkleRoot.root(ids);
+    logger.info("blockNum: {}, stateRoot: {}",
+        height.get().orElseThrow(() -> new IllegalStateException("blockNum is null")), root);
+    return new Pair<>(height.get(), root);
   }
 
   private static Sha256Hash getHash(Map.Entry<byte[], byte[]> entry) {
