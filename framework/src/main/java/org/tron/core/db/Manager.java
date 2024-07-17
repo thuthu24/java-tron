@@ -1220,10 +1220,10 @@ public class Manager {
     setBlockWaitLock(true);
     try {
       synchronized (this) {
+        GlobalContext.setHeader(block.getNum());
         Metrics.histogramObserve(blockedTimer.get());
         blockedTimer.remove();
         long headerNumber = getDynamicPropertiesStore().getLatestBlockHeaderNumber();
-        GlobalContext.setHeader(headerNumber);
         if (block.getNum() <= headerNumber && khaosDb.containBlockInMiniStore(block.getBlockId())) {
           logger.info("Block {} is already exist.", block.getBlockId().getString());
           return;
