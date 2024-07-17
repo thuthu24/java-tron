@@ -6,10 +6,13 @@ import com.google.common.primitives.Ints;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.tron.common.context.GlobalContext;
+import org.tron.common.error.TronDBException;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.MerkleRoot;
 import org.tron.common.utils.Pair;
@@ -29,10 +32,15 @@ public class RootHashService {
       }
       return getHash(entry);
     }).sorted().collect(Collectors.toList());
-    Sha256Hash root = MerkleRoot.root(ids);
-    logger.info("blockNum: {}, stateRoot: {}",
-        height.get().orElseThrow(() -> new IllegalStateException("blockNum is null")), root);
-    return new Pair<>(height.get(), root);
+    Sha256Hash actual = MerkleRoot.root(ids);
+    long num = height.get().orElseThrow(() -> new TronDBException("blockNum is null"));
+    Sha256Hash expected = GlobalContext.popBlockHash(num);
+    if (!Objects.equals(expected, actual)) {
+      throw new TronDBException(String.format(
+          "Root hash mismatch for blockNum: %s, expected: %s, actual: %s", num, expected, actual));
+    }
+
+    return new Pair<>(height.get(), actual);
   }
 
   private static Sha256Hash getHash(Map.Entry<byte[], byte[]> entry) {

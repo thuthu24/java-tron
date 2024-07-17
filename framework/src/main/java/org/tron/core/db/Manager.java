@@ -1017,12 +1017,18 @@ public class Manager {
       NonCommonBlockException, BadNumberBlockException, BadBlockException, ZksnarkException,
       EventBloomException {
     block.generatedByMyself = true;
-    long start = System.currentTimeMillis();
+    final long start = System.currentTimeMillis();
+    Sha256Hash stateRoot = block.getStateRoot();
+    GlobalContext.putBlockHash(block.getNum(), stateRoot);
+    // clear stateRoot for block
+    block.clearStateRoot();
     pushBlock(block);
-    logger.info("Push block cost: {} ms, blockNum: {}, blockHash: {}, trx count: {}.",
+    logger.info(
+        "Push block cost: {} ms, blockNum: {}, blockHash: {},stateRoot: {}, trx count: {}.",
         System.currentTimeMillis() - start,
         block.getNum(),
         block.getBlockId(),
+        stateRoot,
         block.getTransactions().size());
   }
 

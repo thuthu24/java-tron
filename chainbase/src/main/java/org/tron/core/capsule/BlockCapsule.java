@@ -335,6 +335,15 @@ public class BlockCapsule implements ProtoCapsule<Block> {
     return toStringBuff.toString();
   }
 
+  public Sha256Hash getStateRoot() {
+    return Sha256Hash.wrap(this.block.getBlockHeader().getStateRoot());
+  }
+
+  public void clearStateRoot() {
+    BlockHeader blockHeader = this.block.getBlockHeader().toBuilder().clearStateRoot().build();
+    this.block = this.block.toBuilder().setBlockHeader(blockHeader).build();
+  }
+
   public static class BlockId extends Sha256Hash {
 
     private long num;

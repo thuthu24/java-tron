@@ -238,7 +238,7 @@ public class Args extends CommonParameter {
     PARAMETER.maxUnsolidifiedBlocks = 54;
     PARAMETER.allowOldRewardOpt = 0;
     PARAMETER.allowEnergyAdjustment = 0;
-    GlobalContext.removeHeader();
+    GlobalContext.clear();
   }
 
   /**
