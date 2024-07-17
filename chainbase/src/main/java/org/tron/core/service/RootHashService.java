@@ -3,13 +3,12 @@ package org.tron.core.service;
 import com.google.common.collect.Streams;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.MerkleRoot;
@@ -23,14 +22,13 @@ public class RootHashService {
     "latest_block_header_number".getBytes());
 
   public static Pair<Optional<Long>, Sha256Hash> getRootHash(Map<byte[], byte[]> rows) {
-    List<Sha256Hash> ids = Collections.synchronizedList(new ArrayList<>());
     AtomicReference<Optional<Long>> height = new AtomicReference<>(Optional.empty());
-    Streams.stream(rows.entrySet()).parallel().forEach(entry -> {
+    List<Sha256Hash> ids = Streams.stream(rows.entrySet()).parallel().map(entry -> {
       if (Arrays.equals(HEADER_KEY, entry.getKey())) {
         height.set(Optional.of(ByteArray.toLong(entry.getValue())));
       }
-      ids.add(getHash(entry));
-    });
+      return getHash(entry);
+    }).sorted().collect(Collectors.toList());
     Sha256Hash root = MerkleRoot.root(ids);
     logger.info("blockNum: {}, stateRoot: {}",
         height.get().orElseThrow(() -> new IllegalStateException("blockNum is null")), root);
