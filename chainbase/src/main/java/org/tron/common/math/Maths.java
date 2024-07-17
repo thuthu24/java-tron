@@ -406,7 +406,7 @@ public class Maths {
       byte[] key = Bytes.concat(longToBytes(h), new byte[]{Op.POW.code},
           doubleToBytes(a), doubleToBytes(b));
       if (isNoStrict) {
-        logger.info("{}/t{}/t/{}/{}/{}/{}", h, Op.POW.code, doubleToHex(a), doubleToHex(b),
+        logger.info("{}\t{}\t{}\t{}\t{}\t{}", h, Op.POW.code, doubleToHex(a), doubleToHex(b),
             doubleToHex(result), doubleToHex(strictResult));
       }
       mathStore.ifPresent(s -> s.put(key, doubleToBytes(result)));
