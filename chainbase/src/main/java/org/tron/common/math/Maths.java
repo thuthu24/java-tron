@@ -23,6 +23,7 @@ public class Maths {
 
   static final Map<PowData, Double> powData = Collections.synchronizedMap(new HashMap<>());
   static final String POW_B1 = "3f40624dd2f1a9fc"; // 1/2000 = 0.0005
+  static final String POW_B2 = "409f400000000000"; // 2000
 
   /**
    * This static block is used to initialize the data map.
@@ -373,6 +374,8 @@ public class Maths {
     addPowData("3ff6a89b5ffae2dd", POW_B1, "3ff000b67158530a");
     addPowData("3ff99efec0fbc5d8", POW_B1, "3ff000f6e0b478fe");
     addPowData("3ffffcf9acb020be", POW_B1, "3ff0016b472e0602");
+    addPowData("3ff000df8a0eadf8", POW_B2, "3ff8817d68bc901b");
+    addPowData("3ff00004ec241f48", POW_B2, "3ff026a33089cf0d");
   }
 
   private static void addPowData(String a, String b, String ret) {
