@@ -59,8 +59,8 @@ public class CheckTmpStore extends TronDatabase<byte[]> {
 
   @Override
   public void updateByBatch(Map<byte[], byte[]> rows, WriteOptionsWrapper writeOptions) {
-    super.updateByBatch(rows, writeOptions);
     Pair<Optional<Long>, Sha256Hash> ret = RootHashService.getRootHash(rows);
+    super.updateByBatch(rows, writeOptions);
     ret.getKey().ifPresent(height -> stateRootStore.put(ByteArray.fromLong(height),
         ret.getValue().getBytes()));
   }
