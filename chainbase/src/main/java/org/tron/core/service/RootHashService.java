@@ -11,18 +11,30 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tron.common.context.GlobalContext;
 import org.tron.common.error.TronDBException;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.MerkleRoot;
 import org.tron.common.utils.Pair;
 import org.tron.common.utils.Sha256Hash;
+import org.tron.core.db.TronDatabase;
+import org.tron.core.store.CorruptedCheckpointStore;
 
 @Slf4j(topic = "DB")
+@Component
 public class RootHashService {
 
   private static final byte[] HEADER_KEY = Bytes.concat(simpleEncode("properties"),
     "latest_block_header_number".getBytes());
+
+  private static Optional<CorruptedCheckpointStore> corruptedCheckpointStore = Optional.empty();
+
+  @Autowired
+  public RootHashService(@Autowired CorruptedCheckpointStore corruptedCheckpointStore) {
+    RootHashService.corruptedCheckpointStore = Optional.ofNullable(corruptedCheckpointStore);
+  }
 
   public static Pair<Optional<Long>, Sha256Hash> getRootHash(Map<byte[], byte[]> rows) {
     AtomicReference<Optional<Long>> height = new AtomicReference<>(Optional.empty());
@@ -36,6 +48,8 @@ public class RootHashService {
     long num = height.get().orElseThrow(() -> new TronDBException("blockNum is null"));
     Sha256Hash expected = GlobalContext.popBlockHash(num);
     if (!Objects.equals(expected, actual)) {
+      corruptedCheckpointStore.ifPresent(TronDatabase::reset);
+      corruptedCheckpointStore.ifPresent(store -> store.updateByBatch(rows));
       throw new TronDBException(String.format(
           "Root hash mismatch for blockNum: %s, expected: %s, actual: %s", num, expected, actual));
     }
