@@ -9,6 +9,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.util.ObjectUtils;
 import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
@@ -22,6 +23,7 @@ import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
+import org.tron.core.net.TronNetDelegate;
 import org.tron.protos.Protocol.Block;
 
 @Slf4j(topic = "app")
@@ -33,6 +35,8 @@ public class SolidityNode {
 
   private DatabaseGrpcClient databaseGrpcClient;
 
+  private final TronNetDelegate tronNetDelegate;
+
   private AtomicLong ID = new AtomicLong();
 
   private AtomicLong remoteBlockNum = new AtomicLong();
@@ -43,9 +47,10 @@ public class SolidityNode {
 
   private volatile boolean flag = true;
 
-  public SolidityNode(Manager dbManager) {
+  public SolidityNode(Manager dbManager, TronNetDelegate tronNetDelegate) {
     this.dbManager = dbManager;
     this.chainBaseManager = dbManager.getChainBaseManager();
+    this.tronNetDelegate = tronNetDelegate;
     resolveCompatibilityIssueIfUsingFullNodeDatabase();
     ID.set(chainBaseManager.getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
     databaseGrpcClient = new DatabaseGrpcClient(CommonParameter.getInstance().getTrustNodeAddr());
@@ -84,9 +89,6 @@ public class SolidityNode {
     }
     parameter.setSolidityNode(true);
 
-    TronApplicationContext context = new TronApplicationContext(DefaultConfig.class);
-    context.registerShutdownHook();
-
     if (parameter.isHelp()) {
       logger.info("Here is the help message.");
       return;
@@ -94,10 +96,18 @@ public class SolidityNode {
     // init metrics first
     Metrics.init();
 
+    DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+    beanFactory.setAllowCircularReferences(false);
+    TronApplicationContext context =
+        new TronApplicationContext(beanFactory);
+    context.register(DefaultConfig.class);
+    context.refresh();
     Application appT = ApplicationFactory.create(context);
-    SolidityNode node = new SolidityNode(appT.getDbManager());
-    node.start();
+    context.registerShutdownHook();
     appT.startup();
+    SolidityNode node = new SolidityNode(appT.getDbManager(),
+        context.getBean(TronNetDelegate.class));
+    node.start();
     appT.blockUntilShutdown();
   }
 
@@ -138,11 +148,19 @@ public class SolidityNode {
       try {
         Block block = blockQueue.take();
         loopProcessBlock(block);
+        flag = dbManager.getLatestSolidityNumShutDown() != dbManager.getDynamicPropertiesStore()
+            .getLatestBlockHeaderNumberFromDB();
       } catch (Exception e) {
         logger.error(e.getMessage());
         sleep(exceptionSleepTime);
       }
     }
+    logger.info("Begin shutdown, currentBlockNum:{}, DbBlockNum:{}, solidifiedBlockNum:{}",
+        dbManager.getDynamicPropertiesStore().getLatestBlockHeaderNumber(),
+        dbManager.getDynamicPropertiesStore().getLatestBlockHeaderNumberFromDB(),
+        dbManager.getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
+    tronNetDelegate.markHitDown();
+    tronNetDelegate.unparkHitThread();
   }
 
   private void loopProcessBlock(Block block) {
