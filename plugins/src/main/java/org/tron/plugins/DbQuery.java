@@ -24,7 +24,16 @@ import picocli.CommandLine;
         "n:query failed,please check toolkit.log"})
 public class DbQuery implements Callable<Integer> {
 
-  enum Type { hex, block, account, exchange }
+  enum Type {
+    hex(""), block("block"),
+    account("account"), exchange("exchange,exchange-v2");
+
+    final List<String> dbs;
+
+    Type(String dbs) {
+      this.dbs = List.of(dbs.split(","));
+    }
+  }
 
   @CommandLine.Spec
   CommandLine.Model.CommandSpec spec;
@@ -78,7 +87,7 @@ public class DbQuery implements Callable<Integer> {
       spec.commandLine().getOut().format("%s\t%s", dbName, key).println();
       logger.info("{}\t{}", dbName, key);
     } else {
-      Type type = Arrays.stream(Type.values()).filter(t -> t.name().equals(dbName))
+      Type type = Arrays.stream(Type.values()).filter(t -> t.dbs.contains(dbName))
           .findFirst().orElse(Type.hex);
       String json = switch (type) {
         case block -> ByteArray.toJson(ByteArray.toBlock(b));
