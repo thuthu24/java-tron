@@ -376,6 +376,7 @@ public class Maths {
     addPowData("3ffffcf9acb020be", POW_B1, "3ff0016b472e0602");
     addPowData("3ff000df8a0eadf8", POW_B2, "3ff8817d68bc901b");
     addPowData("3ff00004ec241f48", POW_B2, "3ff026a33089cf0d");
+    addPowData("3ff0152243bac553", POW_B1, "3ff00002b2bbfc38"); // for x86 jdk17 on 4143944
   }
 
   private static void addPowData(String a, String b, String ret) {
