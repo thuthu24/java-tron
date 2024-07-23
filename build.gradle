@@ -8,6 +8,13 @@ if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
             "  Detected version ${JavaVersion.current()}")
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+        vendor = JvmVendorSpec.ADOPTIUM
+    }
+}
+
 subprojects {
     apply plugin: "jacoco"
     apply plugin: "maven-publish"
