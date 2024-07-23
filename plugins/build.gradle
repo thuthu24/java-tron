@@ -6,7 +6,7 @@ apply plugin: 'application'
 apply plugin: 'checkstyle'
 
 def versions = [
-        checkstyle: '8.7',
+        checkstyle: '10.14.2', // see https://github.com/checkstyle/checkstyle/issues/14123
 ]
 mainClassName = 'org.tron.plugins.ArchiveManifest'
 group 'org.tron'

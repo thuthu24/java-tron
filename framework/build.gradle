@@ -14,7 +14,7 @@ apply plugin: 'checkstyle'
 mainClassName = 'org.tron.program.FullNode'
 
 def versions = [
-        checkstyle: '8.7',
+        checkstyle: '10.14.2', // see https://github.com/checkstyle/checkstyle/issues/14123
 ]
 
 jdepsReport {
