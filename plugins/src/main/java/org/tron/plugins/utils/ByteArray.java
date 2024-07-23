@@ -2,10 +2,14 @@ package org.tron.plugins.utils;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.MessageOrBuilder;
+import com.google.protobuf.util.JsonFormat;
 import java.math.BigInteger;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.tron.protos.Protocol;
 
 public class ByteArray {
 
@@ -97,5 +101,37 @@ public class ByteArray {
       data = "0" + data;
     }
     return Hex.decode(data);
+  }
+
+  public static Protocol.Block toBlock(byte[] b) {
+    try {
+      return Protocol.Block.parseFrom(b);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static Protocol.Account toAccount(byte[] b) {
+    try {
+      return Protocol.Account.parseFrom(b);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static Protocol.Exchange toExchange(byte[] b) {
+    try {
+      return Protocol.Exchange.parseFrom(b);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static String toJson(MessageOrBuilder messageOrBuilder) {
+    try {
+      return JsonFormat.printer().sortingMapKeys().print(messageOrBuilder);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
