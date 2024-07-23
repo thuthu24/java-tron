@@ -416,7 +416,7 @@ public class Maths {
       mathStore.ifPresent(s -> s.put(key, doubleToBytes(result)));
       strictMathStore.ifPresent(s -> s.put(key, doubleToBytes(strictResult)));
     });
-    return powData.getOrDefault(new PowData(a, b), result);
+    return powData.getOrDefault(new PowData(a, b), strictResult);
   }
 
   static String doubleToHex(double input) {
