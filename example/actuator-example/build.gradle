@@ -1,3 +1,7 @@
+plugins {
+    id("org.kordamp.gradle.jdeps")
+    id("org.kordamp.gradle.jdeprscan")
+}
 description = "actuator-example – a example of actuator."
 
 dependencies {

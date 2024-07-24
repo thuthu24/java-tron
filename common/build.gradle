@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id("org.kordamp.gradle.jdeps")
+    id("org.kordamp.gradle.jdeprscan")
 }
 
 version '1.0.0'

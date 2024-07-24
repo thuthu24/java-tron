@@ -1,3 +1,7 @@
+plugins {
+    id("org.kordamp.gradle.jdeps")
+    id("org.kordamp.gradle.jdeprscan")
+}
 description = "chainbase – a decentralized database for blockchain."
 
 // Dependency versions

@@ -1,3 +1,8 @@
+plugins {
+    id("org.kordamp.gradle.jdeps") version "0.20.0" apply false
+    id("org.kordamp.gradle.jdeprscan") version "0.11.0" apply false
+}
+
 allprojects {
     version = "1.0.0"
     apply plugin: "java-library"
@@ -81,27 +86,28 @@ subprojects {
         testImplementation "org.mockito:mockito-core:5.8.0"
     }
 
-    task sourcesJar(type: Jar, dependsOn: classes) {
+    tasks.register('sourcesJar', Jar) {
+        dependsOn classes
         classifier = "sources"
         from sourceSets.main.allSource
         duplicatesStrategy = DuplicatesStrategy.INCLUDE // allow duplicates
     }
 
 
-    tasks.withType(AbstractArchiveTask) {
+    tasks.withType(AbstractArchiveTask).configureEach {
         preserveFileTimestamps = false
         reproducibleFileOrder = true
         duplicatesStrategy = DuplicatesStrategy.INCLUDE // allow duplicates
     }
 
-    configurations.all {
+    configurations.configureEach {
         resolutionStrategy {
             force group: 'com.google.guava', name: 'guava', version: '33.2.1-jre'
         }
     }
 }
 
-task copyToParent(type: Copy) {
+tasks.register('copyToParent', Copy) {
     into "$buildDir/libs"
     subprojects {
         from tasks.withType(Jar)

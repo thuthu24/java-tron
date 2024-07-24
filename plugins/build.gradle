@@ -1,4 +1,6 @@
 plugins {
+    id("org.kordamp.gradle.jdeps")
+    id("org.kordamp.gradle.jdeprscan")
     id "org.sonarqube" version "2.6"
 }
 

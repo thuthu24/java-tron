@@ -2,8 +2,8 @@ plugins {
     id "org.gradle.test-retry" version "1.5.9"
     id "org.sonarqube" version "2.6"
     id "com.gorylenko.gradle-git-properties" version "2.4.1"
-    id("org.kordamp.gradle.jdeps") version "0.20.0"
-    id("org.kordamp.gradle.jdeprscan") version "0.11.0"
+    id("org.kordamp.gradle.jdeps")
+    id("org.kordamp.gradle.jdeprscan")
 }
 
 gitProperties.failOnNoGitDirectory = false;
@@ -27,7 +27,7 @@ configurations {
 
 }
 
-configurations.getByName('checkstyleConfig') {
+configurations.named('checkstyleConfig') {
     transitive = false
 }
 
@@ -35,7 +35,7 @@ static def isWindows() {
     return org.gradle.internal.os.OperatingSystem.current().isWindows()
 }
 
-task version(type: Exec) {
+tasks.register('version', Exec) {
     commandLine 'bash', '-c', '../ver.sh'
 }
 
@@ -86,7 +86,7 @@ checkstyleMain {
     source = 'src/main/java'
 }
 
-task lint(type: Checkstyle) {
+tasks.register('lint', Checkstyle) {
     // Cleaning the old log because of the creation of the new ones (not sure if totaly needed)
     delete fileTree(dir: "${project.rootDir}/app/build/reports")
     source 'src'
@@ -99,7 +99,7 @@ task lint(type: Checkstyle) {
     ignoreFailures = false
 }
 
-tasks.matching { it instanceof Test }.all {
+tasks.matching { it instanceof Test }.configureEach {
     testLogging.events = ["failed", "passed", "skipped"]
 }
 
@@ -152,7 +152,7 @@ jacocoTestReport {
 }
 
 def binaryRelease(taskName, jarName, mainClass) {
-    return tasks.create("${taskName}", Jar) {
+    return tasks.register("${taskName}", Jar) {
         baseName = jarName
         version = null
         from(sourceSets.main.output) {
@@ -249,7 +249,7 @@ if (releaseBinary == 'true') {
 
 }
 
-task copyToParent(type: Copy) {
+tasks.register('copyToParent', Copy) {
     into "../build/distributions"
     from "$buildDir/distributions"
     include "*.zip"
