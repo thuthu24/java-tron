@@ -1019,10 +1019,17 @@ public class Manager {
     block.generatedByMyself = true;
     final long start = System.currentTimeMillis();
     Sha256Hash stateRoot = block.getStateRoot();
-    GlobalContext.putBlockHash(block.getNum(), stateRoot);
+    if (!Objects.equals(Sha256Hash.ZERO_HASH, stateRoot)) {
+      GlobalContext.putBlockHash(block.getNum(), stateRoot);
+    }
     // clear stateRoot for block
     block.clearStateRoot();
-    pushBlock(block);
+    try {
+      GlobalContext.setHeader(block.getNum());
+      pushBlock(block);
+    } finally {
+      GlobalContext.removeHeader();
+    }
     logger.info(
         "Push block cost: {} ms, blockNum: {}, blockHash: {},stateRoot: {}, trx count: {}.",
         System.currentTimeMillis() - start,
@@ -1226,7 +1233,6 @@ public class Manager {
     setBlockWaitLock(true);
     try {
       synchronized (this) {
-        GlobalContext.setHeader(block.getNum());
         Metrics.histogramObserve(blockedTimer.get());
         blockedTimer.remove();
         long headerNumber = getDynamicPropertiesStore().getLatestBlockHeaderNumber();
@@ -1366,7 +1372,6 @@ public class Manager {
       }
     } finally {
       setBlockWaitLock(false);
-      GlobalContext.removeHeader();
     }
   }
 

@@ -45,8 +45,8 @@ public class GlobalContext {
     BLOCK_HASHES.get().put(blockNumber, blockHash);
   }
 
-  public static Sha256Hash popBlockHash(long blockNumber) {
-    return BLOCK_HASHES.get().remove(blockNumber);
+  public static Optional<Sha256Hash> popBlockHash(long blockNumber) {
+    return Optional.ofNullable(BLOCK_HASHES.get().remove(blockNumber));
   }
 
   public static void clearBlockHashes() {

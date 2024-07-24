@@ -336,7 +336,8 @@ public class BlockCapsule implements ProtoCapsule<Block> {
   }
 
   public Sha256Hash getStateRoot() {
-    return Sha256Hash.wrap(this.block.getBlockHeader().getStateRoot());
+    ByteString stateRoot = this.block.getBlockHeader().getStateRoot();
+    return stateRoot.isEmpty() ? Sha256Hash.ZERO_HASH : Sha256Hash.wrap(stateRoot);
   }
 
   public void clearStateRoot() {

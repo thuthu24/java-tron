@@ -46,8 +46,8 @@ public class RootHashService {
     }).sorted().collect(Collectors.toList());
     Sha256Hash actual = MerkleRoot.root(ids);
     long num = height.get().orElseThrow(() -> new TronDBException("blockNum is null"));
-    Sha256Hash expected = GlobalContext.popBlockHash(num);
-    if (!Objects.equals(expected, actual)) {
+    Optional<Sha256Hash> expected = GlobalContext.popBlockHash(num);
+    if (expected.isPresent() && !Objects.equals(expected.get(), actual)) {
       corruptedCheckpointStore.ifPresent(TronDatabase::reset);
       corruptedCheckpointStore.ifPresent(store -> store.updateByBatch(rows));
       throw new TronDBException(String.format(
