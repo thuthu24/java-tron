@@ -12,7 +12,6 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.tron.common.storage.WriteOptionsWrapper;
-import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Pair;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.core.db.TronDatabase;
@@ -90,8 +89,7 @@ public class CheckPointV2Store extends TronDatabase<byte[]> {
   public void updateByBatch(Map<byte[], byte[]> rows, WriteOptionsWrapper writeOptions) {
     Pair<Optional<Long>, Sha256Hash> ret = RootHashService.getRootHash(rows);
     super.updateByBatch(rows, writeOptions);
-    ret.getKey().ifPresent(height -> stateRootStore.put(ByteArray.fromLong(height),
-        ret.getValue().getBytes()));
+    ret.getKey().ifPresent(height -> stateRootStore.put(height, ret.getValue()));
   }
 
 }
