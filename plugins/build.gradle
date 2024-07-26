@@ -18,7 +18,20 @@ configurations {
     checkstyleConfig
 }
 
-configurations.getByName('checkstyleConfig') {
+jdepsReport {
+    sourceSets = ['main', 'test']
+    configurations = ['testRuntimeClasspath']
+    consoleOutput = false
+}
+
+jdeprscanReport {
+    sourceSets = ['main', 'test']
+    configurations = ['testRuntimeClasspath']
+    forRemoval = true
+    release = JavaVersion.VERSION_17.getMajorVersion()
+}
+
+configurations.named('checkstyleConfig') {
     transitive = false
 }
 
@@ -48,7 +61,7 @@ checkstyleMain {
     source = 'src/main/java'
 }
 
-task lint(type: Checkstyle) {
+tasks.register('lint', Checkstyle) {
     // Cleaning the old log because of the creation of the new ones (not sure if totaly needed)
     delete fileTree(dir: "${project.rootDir}/app/build/reports")
     source 'src'
@@ -90,7 +103,7 @@ jacocoTestReport {
 }
 
 def binaryRelease(taskName, jarName, mainClass) {
-    return tasks.create("${taskName}", Jar) {
+    return tasks.register("${taskName}", Jar) {
         baseName = jarName
         version = null
         from(sourceSets.main.output) {
@@ -151,7 +164,7 @@ if (releaseBinary == 'true') {
     }
 }
 
-task copyToParent(type: Copy) {
+tasks.register('copyToParent', Copy) {
     into "../build/distributions"
     from "$buildDir/distributions"
     include "*.zip"
