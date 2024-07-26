@@ -10,6 +10,19 @@ dependencies {
     api project(":crypto")
 }
 
+jdepsReport {
+    sourceSets = ['main', 'test']
+    configurations = ['testRuntimeClasspath']
+    consoleOutput = false
+}
+
+jdeprscanReport {
+    sourceSets = ['main', 'test']
+    configurations = ['testRuntimeClasspath']
+    forRemoval = true
+    release = JavaVersion.VERSION_17.getMajorVersion()
+}
+
 test {
 
     testLogging {
