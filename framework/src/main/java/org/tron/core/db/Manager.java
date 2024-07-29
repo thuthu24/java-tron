@@ -1019,7 +1019,8 @@ public class Manager {
     block.generatedByMyself = true;
     final long start = System.currentTimeMillis();
     Sha256Hash stateRoot = block.getStateRoot();
-    if (!Objects.equals(Sha256Hash.ZERO_HASH, stateRoot)) {
+    if (!CommonParameter.getInstance().isCheckRootHashDisable()
+        && !Objects.equals(Sha256Hash.ZERO_HASH, stateRoot)) {
       GlobalContext.putBlockHash(block.getNum(), stateRoot);
     }
     // clear stateRoot for block
@@ -1030,12 +1031,10 @@ public class Manager {
     } finally {
       GlobalContext.removeHeader();
     }
-    logger.info(
-        "Push block cost: {} ms, blockNum: {}, blockHash: {},stateRoot: {}, trx count: {}.",
+    logger.info("Push block cost: {} ms, blockNum: {}, blockHash: {}, trx count: {}.",
         System.currentTimeMillis() - start,
         block.getNum(),
         block.getBlockId(),
-        stateRoot,
         block.getTransactions().size());
   }
 
