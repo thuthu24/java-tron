@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tron.common.utils.ByteArray;
+import org.tron.common.utils.Sha256Hash;
 import org.tron.core.db.TronDatabase;
 import org.tron.core.db.common.iterator.DBIterator;
 
@@ -29,6 +30,11 @@ public class StateRootStore extends TronDatabase<byte[]> {
   @Override
   public void put(byte[] key, byte[] item) {
     dbSource.putData(key, item);
+  }
+
+  public void put(long key, Sha256Hash root) {
+    logger.info("block: {}, stateRoot: {}", key, root);
+    this.put(ByteArray.fromLong(key), root.getBytes());
   }
 
   @Override
