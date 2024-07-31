@@ -82,4 +82,4 @@ jdeprscanReport {
     forRemoval = true
     release = JavaVersion.VERSION_17.getMajorVersion()
 }
-
+processResources.dependsOn(generateProto) // explicit_dependency
