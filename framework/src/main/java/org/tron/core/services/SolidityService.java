@@ -1,91 +1,70 @@
-package org.tron.program;
+package org.tron.core.services;
 
 import static org.tron.core.config.Parameter.ChainConstant.BLOCK_PRODUCED_INTERVAL;
 
+import java.util.Optional;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.BooleanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
-import org.tron.common.application.Application;
-import org.tron.common.application.ApplicationFactory;
-import org.tron.common.application.TronApplicationContext;
 import org.tron.common.client.DatabaseGrpcClient;
 import org.tron.common.parameter.CommonParameter;
-import org.tron.common.prometheus.Metrics;
 import org.tron.core.ChainBaseManager;
-import org.tron.core.Constant;
 import org.tron.core.capsule.BlockCapsule;
-import org.tron.core.config.DefaultConfig;
-import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
 import org.tron.protos.Protocol.Block;
 
 @Slf4j(topic = "app")
-public class SolidityNode {
+@Component
+public class SolidityService {
 
+  @Autowired
   private Manager dbManager;
 
+  @Autowired
   private ChainBaseManager chainBaseManager;
 
   private DatabaseGrpcClient databaseGrpcClient;
 
-  private AtomicLong ID = new AtomicLong();
+  private AtomicLong ID;
 
-  private AtomicLong remoteBlockNum = new AtomicLong();
+  private AtomicLong remoteBlockNum;
 
-  private LinkedBlockingDeque<Block> blockQueue = new LinkedBlockingDeque<>(100);
+  private LinkedBlockingDeque<Block> blockQueue;
 
-  private int exceptionSleepTime = 1000;
+  private int exceptionSleepTime;
 
   private volatile boolean flag = true;
 
-  public SolidityNode(Manager dbManager) {
-    this.dbManager = dbManager;
-    this.chainBaseManager = dbManager.getChainBaseManager();
+  private static Optional<SolidityService> INSTANCE = Optional.empty();
+
+  @PostConstruct
+  private void init() {
+    if (!CommonParameter.getInstance().isSolidityNode()) {
+      return;
+    }
+    if (ObjectUtils.isEmpty(CommonParameter.getInstance().getTrustNodeAddr())) {
+      throw new IllegalArgumentException("Trust node is not set.");
+    }
     resolveCompatibilityIssueIfUsingFullNodeDatabase();
-    ID.set(chainBaseManager.getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
+    ID = new AtomicLong(chainBaseManager.getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
     databaseGrpcClient = new DatabaseGrpcClient(CommonParameter.getInstance().getTrustNodeAddr());
-    remoteBlockNum.set(getLastSolidityBlockNum());
+    remoteBlockNum = new AtomicLong(0);
+    blockQueue = new LinkedBlockingDeque<>(100);
+    exceptionSleepTime = 1000;
+    INSTANCE = Optional.of(this);
   }
 
-  /**
-   * Start the SolidityNode.
-   */
-  public static void main(String[] args) {
-    logger.info("Solidity node is running.");
-    Args.setParam(args, Constant.TESTNET_CONF);
-    CommonParameter parameter = CommonParameter.getInstance();
-
-    logger.info("index switch is {}",
-        BooleanUtils.toStringOnOff(BooleanUtils
-            .toBoolean(parameter.getStorage().getIndexSwitch())));
-
-    if (ObjectUtils.isEmpty(parameter.getTrustNodeAddr())) {
-      logger.error("Trust node is not set.");
-      return;
-    }
-    parameter.setSolidityNode(true);
-
-    TronApplicationContext context = new TronApplicationContext(DefaultConfig.class);
-    context.registerShutdownHook();
-
-    if (parameter.isHelp()) {
-      logger.info("Here is the help message.");
-      return;
-    }
-    // init metrics first
-    Metrics.init();
-
-    Application appT = ApplicationFactory.create(context);
-    SolidityNode node = new SolidityNode(appT.getDbManager());
-    node.start();
-    appT.startup();
-    appT.blockUntilShutdown();
+  public static void runIfNeed() {
+    INSTANCE.ifPresent(SolidityService::start);
   }
 
   private void start() {
     try {
+      remoteBlockNum.set(getLastSolidityBlockNum());
       new Thread(this::getBlock).start();
       new Thread(this::processBlock).start();
       logger.info("Success to start solid node, ID: {}, remoteBlockNum: {}.", ID.get(),
@@ -182,7 +161,7 @@ public class SolidityNode {
     }
   }
 
-  public void sleep(long time) {
+  private void sleep(long time) {
     try {
       Thread.sleep(time);
     } catch (Exception e1) {
