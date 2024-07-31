@@ -167,6 +167,7 @@ public class Args extends CommonParameter {
     PARAMETER.tcpNettyWorkThreadNum = 0;
     PARAMETER.udpNettyWorkThreadNum = 0;
     PARAMETER.solidityNode = false;
+    PARAMETER.keystore = false;
     PARAMETER.trustNodeAddr = "";
     PARAMETER.walletExtensionApi = false;
     PARAMETER.estimateEnergy = false;
@@ -238,7 +239,7 @@ public class Args extends CommonParameter {
     PARAMETER.maxUnsolidifiedBlocks = 54;
     PARAMETER.allowOldRewardOpt = 0;
     PARAMETER.allowEnergyAdjustment = 0;
-    GlobalContext.removeHeader();
+    GlobalContext.clear();
   }
 
   /**
